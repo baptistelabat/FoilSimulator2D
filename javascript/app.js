@@ -326,7 +326,7 @@ function updateFlightSpeed(){
 		var myOutput = document.getElementById("flightSpeed");
 		//copy the value over
 		myOutput.value = myRange.value;
-    uvw_body_grnd_NED.x = 1*myOutput.value;
+    V = 1*myOutput.value*1852/3600;
 }
 function updateMass(){
 		//get elements
