@@ -1,0 +1,217 @@
+<!DOCTYPE HTML>
+<html style="direction: ltr;" lang="fr">
+<head>
+	<meta content="text/html; charset=UTF-8" http-equiv="content-type"/>
+</head>
+<body>
+  <p>Foil simulator <a href="https://github.com/baptistelabat/">(source code)</a><br>
+  <output id = "time">0</output>s   
+ Flight height <output id = "flightHeight">0</output>m
+ Pitch angle <output id = "pitch">0</output>°<br>
+ Rake mean power <output id = "rakeMeanPower">0</output>W<br>
+    </p>
+    <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" width="2000" height="500">
+    <marker id="triangle"
+      viewBox="0 0 20 20" refX="0" refY="10" 
+      markerUnits="strokeWidth"
+      markerWidth="8" markerHeight="6"
+      orient="auto">
+      <path d="M 0 0 L 20 10 L 0 20 z" />
+    </marker>
+          <g transform="translate(350,250) ">
+             
+            <line id="grnd" x1="-1000" y1="-000" x2="1000" y2="000" style="stroke:rgb(0,0,255);stroke-width:2" />
+            <g id="body_frame" transform="translate(0,0)">
+              <line id="keel" x1="0" y1="12.5" x2="750" y2="12.5" style="stroke:rgb(0,0,0);stroke-width:2" />
+                <g id="CoG_frame" transform="translate(0,-0)">
+                  <path id="Fweight" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/>
+                  <path id="Fall" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="red"/>
+                </g>
+                <g id="elevator_frame" transform="translate(0,-0)">
+                  <line id="elevator" x1="0" y1="0" x2="10" y2="00" style="stroke:rgb(0,0,0);stroke-width:2" />
+                  <path id="Felevator" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/> 
+                </g>
+              <g id="foil_frame" transform="rotate(0)">
+                <line id="foil" x1="0" y1="0" x2="10" y2="0" style="stroke:rgb(255,0,0);stroke-width:2" />
+                <path id="Ffoil" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/> 
+              </g>
+            </g>
+          </g>
+    </svg>
+    <form action = "">
+		<fieldset>
+      Elevator Rake Angle
+      <input id = "elevatorRakeRange"
+				type = "range"
+				min = "-3"
+				max = "3"
+				value = "0"
+				step = "0.1" />
+			<output id = "elevatorRake">0</output>°
+      Foil Rake Angle
+			<input id = "foilRakeRange"
+				type = "range"
+				min = "-3"
+				max = "9"
+				value = "7.4"
+				step = "0.1" />
+			<output id = "foilRake">1</output>°
+    </fieldset>
+      <fieldset>
+      Flight speed
+			<input id = "flightSpeedRange"
+				type = "range"
+				min = "0"
+				max = "45"
+				value = "25"
+				step = "1" />
+			<output id = "flightSpeed">25</output>kt
+    </fieldset>
+
+    <fieldset>
+      Mass
+			<input id = "massRange"
+				type = "range"
+				min = "0.1"
+				max = "5000"
+				value = "3000"
+				step = "0.1" />
+			<output id = "mass">2</output>kg
+      Longitudinal coordinates
+			<input id = "CGLongiRange"
+				type = "range"
+				min = "0"
+				max = "15"
+				value = "6"
+				step = "0.01" />
+			<output id = "CGLongi">2</output>m
+      Vertical coordinates
+			<input id = "CGVertUpRange"
+				type = "range"
+				min = "-10"
+				max = "10"
+				value = "3"
+				step = "0.01" />
+			<output id = "CGVertUp">2</output>m
+        Gravity? <input type="checkbox" id="gravityCheck" checked =true>
+     </fieldset>
+     <fieldset>
+      Pitch inertia
+			<input id = "pitchInertiaRange"
+				type = "range"
+				min = "0.1"
+				max = "1e6"
+				value = "2e5"
+				step = "0.1" />
+			<output id = "pitchInertia">2</output>kg
+    </fieldset>
+    <fieldset>
+      Elevator area
+			<input id = "elevatorAreaRange"
+				type = "range"
+				min = "0"
+				max = "20"
+				value = "0.4"
+				step = "0.01" />
+			<output id = "elevatorArea">6</output>m2
+      Foil area
+			<input id = "foilAreaRange"
+				type = "range"
+				min = "0"
+				max = "20"
+				value = "1"
+				step = "0.01" />
+			<output id = "foilArea">6</output>m2
+    </fieldset>
+    <fieldset>
+      Elevator aspect Ratio
+      <input id = "elevatorAspectRatioRange"
+				type = "range"
+				min = "1"
+				max = "20"
+				value = "10"
+				step = "0.1" />
+			<output id = "elevatorAspectRatio">5</output>
+      Foil aspect Ratio
+      <input id = "foilAspectRatioRange"
+				type = "range"
+				min = "1"
+				max = "20"
+				value = "5"
+				step = "0.1" />
+			<output id = "foilAspectRatio">5</output>
+    </fieldset>
+    <fieldset>
+          Elevator longitudinal coordinates
+			<input id = "elevatorLongiRange"
+				type = "range"
+				min = "0"
+				max = "15"
+				value = "0"
+				step = "0.01" />
+			<output id = "elevatorLongi">2</output>m
+      Foil longitudinal coordinates
+			<input id = "foilLongiRange"
+				type = "range"
+				min = "0"
+				max = "15"
+				value = "7"
+				step = "0.01" />
+			<output id = "foilLongi">2</output>m
+      </fieldset>
+      <fieldset>
+          Elevator vertical coordinates
+			<input id = "elevatorVertUpRange"
+				type = "range"
+				min = "-10"
+				max = "10"
+				value = "-2"
+				step = "0.01" />
+			<output id = "elevatorVertUp">2</output>m
+      Foil vertical coordinates
+			<input id = "foilVertUpRange"
+				type = "range"
+				min = "-10"
+				max = "10"
+				value = "-2"
+				step = "0.01" />
+			<output id = "foilVertUp">2</output>m
+      </fieldset>
+      <fieldset>
+      <select id="fluidSelect">
+        <option value="Water">Water</option>
+        <option value="Air">Air</option>
+      </select>
+    </fieldset>
+	</form>
+    <form class="form-horizontal well">
+      <legend>
+        <h3>
+          <div id="title">Polar selection (Xfoil format, can be downloaded from <a href="http://airfoiltools.com/polar/">http://airfoiltools.com/polar/</a>)</div>
+        </h3>
+        Warning: data are extrapolated.
+      </legend>
+      <fieldset>
+          <label for="csvFileInput"> <strong>Foil CSV File:</strong>
+          </label>
+          <input type="file" id="csvFileInput" onchange="handleFiles(this.files)"
+          accept=".">
+        </div>
+      </fieldset>
+      <fieldset>
+          <label for="csvFileInput"> <strong>Elevator CSV File:</strong>
+          </label>
+          <input type="file" id="csvFileInput" onchange="handleFiles(this.files)"
+          accept=".">
+        </div>
+      </fieldset>
+    </form>
+    <div id="output">
+    </div>
+    <script type = "text/javascript" language="javascript" src = "javascript/three.min.js" charset="utf-8"></script>	
+    <script type = "text/javascript" language="javascript" src="javascript/everpolate.browserified.min.js"></script>
+	  <script type = "text/javascript" language="javascript" src = "javascript/app.js" charset="utf-8"></script>		
+  	<script type = "text/javascript" language="javascript" src = "javascript/read-csv.js" charset="utf-8"></script>
+</body>
+</html>
+            
