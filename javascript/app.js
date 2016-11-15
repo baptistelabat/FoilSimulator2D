@@ -40,7 +40,9 @@ function dragCoefficient(alpha, AR){
 airDensity         = 1.225;
 waterDensity       = 1025;
 earth_gravity      = 9.81;
+
 g= earth_gravity;
+density = waterDensity
 
 // Ship parameters
 mass                = 3000; 
@@ -52,6 +54,8 @@ elevatorAspectRatio = 5;
 
 // Simulation parameter
 sampleTime      = 0.0005; // Sample time
+isHeaveDynamic = true;
+isPitchDyanmic = true;
 
 // Plot parameter
 meter2pix = 50;
@@ -60,7 +64,7 @@ Newton2meter = 0.00001
 // Initial condition
 var V = 10;
 pqr0          = 0;    // Angular rate
-pitch=0;
+pitch=0*Math.PI/180;
 rakeMeanPower = 0
 
 // NED (North, East, Down) convention is used
@@ -107,6 +111,10 @@ pqr_body_grnd_FSD.x = pqr0;
 elevatorRake  = 0;
 foilRake      = 0;
 
+document.getElementById("pitchRange")               .addEventListener("change", updatePitch);
+document.getElementById("pitchDynamicCheck")        .addEventListener("change", updatePitchDynamic);
+document.getElementById("heaveRange")               .addEventListener("change", updateHeave);
+document.getElementById("heaveDynamicCheck")        .addEventListener("change", updateHeaveDynamic);
 document.getElementById("elevatorRakeRange")        .addEventListener("change", updateElevatorRake);
 document.getElementById("foilRakeRange")            .addEventListener("change", updateFoilRake);
 document.getElementById("flightSpeedRange")         .addEventListener("change", updateFlightSpeed);
@@ -134,6 +142,10 @@ simulation_time = 0;
 
 function init(){
   // Do init to be sure values are the same as described in html page
+  updatePitch();
+  updatePitchDynamic();
+  updateHeave();
+  updateHeaveDynamic();
   updateElevatorRake();
   updateFoilRake();
   updateFlightSpeed();
@@ -157,10 +169,12 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
   plotFoil();
   plotElevator();
   plotWeight();
+  plotShip();
   plotFfoil();
   plotFelevator();
   plotFall();
   rotateFoil(foil_rake);
+  rotateBody(pitch);
   rotateElevator(elevator_rake);
   translateFoil(xyz_foil_body_FSD.x, xyz_foil_body_FSD.z);
   translateElevator(xyz_elev_body_FSD.x, xyz_elev_body_FSD.z);
@@ -184,8 +198,9 @@ function computeForces(){
   
   uvw_fluid_grnd_NED.set(0, 0, 0);
   
-    tmp    = new THREE.Vector3( 0, 0, 0 );
+  tmp    = new THREE.Vector3( 0, 0, 0 );
   CTM = new THREE.Matrix4;
+  
   // Compute forces on foil
   var rpy = new THREE.Euler( 0, 0, 0, 'XYZ' );
   CTM.makeRotationFromEuler(rpy);
@@ -199,9 +214,15 @@ function computeForces(){
   
   // Rotate to ground frame
   
-  CTM.makeRotationX(angle_fluid_body);
-  XYZ_foil_body_NED.set(  -drag,0, lift);
+  CTM.makeRotationY(angle_fluid_body);
+  XYZ_foil_body_NED.set(  drag,0, lift);
   XYZ_foil_body_NED.applyMatrix4(CTM);
+  
+  // Compute torque
+  rpy = new THREE.Euler( 0, 0, 0, 'XYZ' );
+  CTM.makeRotationFromEuler(rpy);
+  KMN_foil_body_FSD = tmp.crossVectors(xyz_foil_body_FSD.clone().sub(xyz_CoG_body_FSD), XYZ_foil_body_NED.clone().applyMatrix4(CTM))
+  //console.log(KMN_foil_body_FSD)
   
   // Compute forces on elevator
   var rpy = new THREE.Euler( 0, 0, 0, 'XYZ' );
@@ -217,13 +238,18 @@ function computeForces(){
   
   // Rotate to ground frame
   
-  CTM.makeRotationX(angle_fluid_body);
-  //console.log(CTM);
-  //console.log(CTM)
-  XYZ_elev_body_NED.set(  -drag,0, lift);
+  CTM.makeRotationY(angle_fluid_body);
+  XYZ_elev_body_NED.set(  drag,0, lift);
   XYZ_elev_body_NED.applyMatrix4(CTM);
   
+  // Compute torque
+  rpy = new THREE.Euler( 0, 0, 0, 'XYZ' );
+  CTM.makeRotationFromEuler(rpy);
+  KMN_elev_body_FSD = tmp.crossVectors(xyz_elev_body_FSD.clone().sub(xyz_CoG_body_FSD), XYZ_elev_body_NED.clone().applyMatrix4(CTM))
+  //console.log(KMN_elev_body_FSD)
+  
   XYZ_all_body_NED = XYZ_elev_body_NED.clone().add(XYZ_foil_body_NED).add(XYZ_wght_body_NED)
+  KMN_all_body_FSD = KMN_elev_body_FSD.clone().add(KMN_foil_body_FSD)
   
 }
 function update(){
@@ -232,11 +258,23 @@ function update(){
   simulation_time = simulation_time + dt;
   inv_mass = 1./mass;
   uvw_body_grnd_NED.add(XYZ_all_body_NED.clone().multiplyScalar(inv_mass*dt))
+  if (false==isHeaveDynamic)
+  {
+    uvw_body_grnd_NED.z = 0
+  }
   uvw_body_grnd_NED.x = V
-  console.log(uvw_body_grnd_NED)
+  //console.log(uvw_body_grnd_NED)
   xyz_body_grnd_NED.add(uvw_body_grnd_NED.clone().multiplyScalar(dt))
   xyz_body_grnd_NED.x = 0
-  console.log(xyz_body_grnd_NED)
+  
+  KMN_all_body_FSD
+  pqr_body_grnd_FSD.add(KMN_all_body_FSD.clone().multiplyScalar(1/pitchInertia*dt));
+  
+  pitch = pitch + pqr_body_grnd_FSD.y*dt;
+  
+  //console.log(xyz_body_grnd_NED)
+  updateHeave();
+  updatePitch();
   
 }
 function rotateFoil(r){
@@ -250,7 +288,7 @@ function rotateElevator(r){
 		elevatorFrame.setAttribute('transform', 'rotate(' +-r_deg +')');
 }
 function rotateBody(r){
-    bodyFrame = document.getElementById("body_frame");
+    bodyFrame = document.getElementById("body__rotate_frame");
     r_deg = r*180/Math.PI;
 		bodyFrame.setAttribute('transform', 'rotate(' +-r_deg +')');
 }
@@ -283,6 +321,12 @@ function plotElevator(){
   elevator.setAttribute('x1', -2/3.*chord*meter2pix);
   elevator.setAttribute('x2', 1/3*chord*meter2pix);
 }
+function plotShip(){
+  length = 13;
+  elevator = document.getElementById("keel");
+  elevator.setAttribute('x1', 0);
+  elevator.setAttribute('x2', length*meter2pix);
+}
 function plotWeight(){
   arrow = document.getElementById("Fweight");
   arrow.setAttribute('d', "M"+ 0*meter2pix +" "+ 0*meter2pix+ " L"+ XYZ_wght_body_NED.x*Newton2meter*meter2pix +" "+ XYZ_wght_body_NED.z*Newton2meter*meter2pix);
@@ -300,7 +344,50 @@ function plotFall(){
   arrow.setAttribute('d', "M"+ 0*meter2pix +" "+ 0*meter2pix+ " L"+ XYZ_all_body_NED.x*Newton2meter*meter2pix +" "+ XYZ_all_body_NED.z*Newton2meter*meter2pix);
 }
 
-
+function updatePitch(){
+		//get elements
+		var myRange = document.getElementById("pitchRange");
+		var myOutput = document.getElementById("pitch");
+    var myCheck = document.getElementById("pitchDynamicCheck");
+    isPitchDynamic = myCheck.checked;
+    if (isPitchDynamic==true)
+    {
+      myRange.value = pitch*180/Math.PI;
+    }
+    else
+    {
+      pitch = myRange.value*Math.PI/180;
+    }
+    //copy the value over
+		myOutput.value = myRange.value;
+}
+function updatePitchDynamic(){
+		//get elements
+    var myCheck = document.getElementById("pitchDynamicCheck");
+    isPitchDynamic = myCheck.checked;
+}
+function updateHeave(){
+		//get elements
+		var myRange = document.getElementById("heaveRange");
+		var myOutput = document.getElementById("heave");
+    var myCheck = document.getElementById("heaveDynamicCheck");
+    isHeaveDynamic = myCheck.checked;
+    if (isHeaveDynamic==true)
+    {
+      myRange.value = -xyz_body_grnd_NED.z;
+    }
+    else
+    {
+      xyz_body_grnd_NED.z = -myRange.value;
+    }
+    //copy the value over
+		myOutput.value = myRange.value;
+}
+function updateHeaveDynamic(){
+		//get elements
+    var myCheck = document.getElementById("heaveDynamicCheck");
+    isHeaveDynamic = myCheck.checked;
+}
 function updateElevatorRake(){
 		//get elements
 		var myRange = document.getElementById("elevatorRakeRange");
@@ -434,12 +521,6 @@ function updateOutput(){
     
     myOutput = document.getElementById("time");
     myOutput.value = Math.round(simulation_time*100)/100;
-    
-    myOutput = document.getElementById("flightHeight");
-    myOutput.value = Math.round(-xyz_body_grnd_NED.z*100)/100;
-    
-    myOutput = document.getElementById("pitch");
-    myOutput.value = Math.round(pitch*100)/100;
 
     myOutput = document.getElementById("rakeMeanPower");
     myOutput.value = Math.round(rakeMeanPower*10)/10;

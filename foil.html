@@ -6,8 +6,6 @@
 <body>
   <p>Foil simulator <a href="https://github.com/baptistelabat/FoilSimulator2D">(source code)</a><br>
   <output id = "time">0</output>s   
- Flight height <output id = "flightHeight">0</output>m
- Pitch angle <output id = "pitch">0</output>°<br>
  Rake mean power <output id = "rakeMeanPower">0</output>W<br>
     </p>
     <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" width="2000" height="500">
@@ -22,6 +20,7 @@
              
             <line id="grnd" x1="-1000" y1="-000" x2="1000" y2="000" style="stroke:rgb(0,0,255);stroke-width:2" />
             <g id="body_frame" transform="translate(0,0)">
+              <g id="body__rotate_frame" transform="translate(0,0)">
               <line id="keel" x1="0" y1="12.5" x2="750" y2="12.5" style="stroke:rgb(0,0,0);stroke-width:2" />
                 <g id="CoG_frame" transform="translate(0,-0)">
                   <path id="Fweight" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/>
@@ -35,10 +34,33 @@
                 <line id="foil" x1="0" y1="0" x2="10" y2="0" style="stroke:rgb(255,0,0);stroke-width:2" />
                 <path id="Ffoil" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/> 
               </g>
+              </g>
             </g>
           </g>
     </svg>
     <form action = "">
+          <fieldset>
+      Pitch
+			<input id = "pitchRange"
+				type = "range"
+				min = "-10"
+				max = "10"
+				value = "0"
+				step = "0.1" />
+			<output id = "pitch">2</output>°
+        Is dynamic? <input type="checkbox" id="pitchDynamicCheck" checked =true>
+     </fieldset>
+     <fieldset>
+      Height
+			<input id = "heaveRange"
+				type = "range"
+				min = "-2"
+				max = "2"
+				value = "0"
+				step = "0.01" />
+			<output id = "heave">2</output>m
+        Is dynamic? <input type="checkbox" id="heaveDynamicCheck" checked =true>
+     </fieldset>
 		<fieldset>
       Elevator Rake Angle
       <input id = "elevatorRakeRange"
