@@ -84,23 +84,40 @@ rakeMeanPower = 0
 // uvw_fluid_ground_NED_kt means the velocity of the fluid relative to the ground projected in NED frame expressed in knots
 // unit is omitted if SI units.
 
+// body is the reference used for computation
+// ref  is the point from which other points are defined
+// fluid describe the fluid at infinity
+// meas is the point for output
+
+// Position coordinates are given relative to the hull reference point which is aft, at MWP (waterline in equilibrium condition)
 uvw_fluid_grnd_NED  = new THREE.Vector3( 0, 0, 0 );
 xyz_body_grnd_NED   = new THREE.Vector3( 0, 0, 0 );
+xyz_body_ref_FSD    = new THREE.Vector3( 0, 0, 0 );
 uvw_body_grnd_NED   = new THREE.Vector3( V, 0, 0 );
-xyz_CoG_body_FSD   = new THREE.Vector3( 0, 0, 0 );
+xyz_CoG_ref_FSD     = new THREE.Vector3( 0, 0, 0 );
+xyz_CoG_body_FSD    = new THREE.Vector3( 0, 0, 0 );
+xyz_foil_ref_FSD    = new THREE.Vector3( 0, 0, 0 );
 xyz_foil_body_FSD   = new THREE.Vector3( 0, 0, 0 );
 uvw_foil_grnd_NED   = new THREE.Vector3( 0, 0, 0 );
+xyz_elev_ref_FSD    = new THREE.Vector3( 0, 0, 0 );
 xyz_elev_body_FSD   = new THREE.Vector3( 0, 0, 0 );
 uvw_elev_grnd_NED   = new THREE.Vector3( 0, 0, 0 );
+
+xyz_meas_ref_FSD    = new THREE.Vector3( 0, 0, 0 );
+xyz_meas_body_FSD   = new THREE.Vector3( 0, 0, 0 );
 
 XYZ_foil_body_NED    = new THREE.Vector3( 0, 0, 0 );
 XYZ_elev_body_NED    = new THREE.Vector3( 0, 0, 0 );
 XYZ_wght_body_NED    = new THREE.Vector3( 0, 0, 0 );
 XYZ_all_body_NED     = new THREE.Vector3( 0, 0, 0 );
-KMN_foil_body_NED    = new THREE.Vector3( 0, 0, 0 );
-KMN_elev_body_NED    = new THREE.Vector3( 0, 0, 0 );
-KMN_wght_body_NED    = new THREE.Vector3( 0, 0, 0 );
-KMN_all_body_NED     = new THREE.Vector3( 0, 0, 0 );
+XYZ_foil_body_FSD    = new THREE.Vector3( 0, 0, 0 );
+XYZ_elev_body_FSD    = new THREE.Vector3( 0, 0, 0 );
+XYZ_wght_body_FSD    = new THREE.Vector3( 0, 0, 0 );
+XYZ_all_body_FSD     = new THREE.Vector3( 0, 0, 0 );
+KMN_foil_body_FSD    = new THREE.Vector3( 0, 0, 0 );
+KMN_elev_body_FSD    = new THREE.Vector3( 0, 0, 0 );
+KMN_wght_body_FSD    = new THREE.Vector3( 0, 0, 0 );
+KMN_all_body_FSD     = new THREE.Vector3( 0, 0, 0 );
 pqr_body_grnd_FSD    = new THREE.Vector3( 0, 0, 0 );
 
 pqr_body_grnd_FSD.x = pqr0;
@@ -176,9 +193,9 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
   rotateFoil(foil_rake);
   rotateBody(pitch);
   rotateElevator(elevator_rake);
-  translateFoil(xyz_foil_body_FSD.x, xyz_foil_body_FSD.z);
-  translateElevator(xyz_elev_body_FSD.x, xyz_elev_body_FSD.z);
-  translateCenterOfInertia(xyz_CoG_body_FSD.x, xyz_CoG_body_FSD.z);
+  translateFoil(xyz_foil_ref_FSD.x, xyz_foil_ref_FSD.z);
+  translateElevator(xyz_elev_ref_FSD.x, xyz_elev_ref_FSD.z);
+  translateCenterOfInertia(xyz_CoG_ref_FSD.x, xyz_CoG_ref_FSD.z);
   translateBody(xyz_body_grnd_NED.x, xyz_body_grnd_NED.z);
 }
 function updatePlot(){
@@ -194,17 +211,26 @@ function updaten()
 }
 
 function computeForces(){
+  CTM = new THREE.Matrix4;
+  invCTM = new THREE.Matrix4;
+  CTMf = new THREE.Matrix4;
+  var rpy = new THREE.Euler( 0, -pitch, 0, 'XYZ' );
+  tmp    = new THREE.Vector3( 0, 0, 0 );
+  
   XYZ_wght_body_NED.set(0, 0, mass*g);
+
+  CTM.makeRotationFromEuler(rpy);
+  invCTM.getInverse(CTM);
+  XYZ_wght_body_FSD = XYZ_wght_body_NED.clone().applyMatrix4(CTM)
+  KMN_wght_body_FSD = tmp.clone().crossVectors(xyz_CoG_body_FSD, XYZ_wght_body_FSD )
   
   uvw_fluid_grnd_NED.set(0, 0, 0);
   
-  tmp    = new THREE.Vector3( 0, 0, 0 );
-  CTM = new THREE.Matrix4;
+
+
   
   // Compute forces on foil
-  var rpy = new THREE.Euler( 0, 0, 0, 'XYZ' );
-  CTM.makeRotationFromEuler(rpy);
-  uvw_foil_grnd_NED = uvw_body_grnd_NED.clone().add(tmp.crossVectors(pqr_body_grnd_FSD, xyz_foil_body_FSD).applyMatrix4(CTM))
+  uvw_foil_grnd_NED = uvw_body_grnd_NED.clone().add(tmp.crossVectors(pqr_body_grnd_FSD, xyz_foil_body_FSD).applyMatrix4(invCTM))
   uvw_fluid_foil_NED =  uvw_fluid_grnd_NED.clone().sub(uvw_foil_grnd_NED);
   angle_fluid_body = Math.atan2(uvw_fluid_foil_NED.z, uvw_fluid_foil_NED.x);
   q = 1/2*density *Math.pow(uvw_fluid_foil_NED.length(),2);
@@ -214,20 +240,17 @@ function computeForces(){
   
   // Rotate to ground frame
   
-  CTM.makeRotationY(angle_fluid_body);
-  XYZ_foil_body_NED.set(  drag,0, lift);
-  XYZ_foil_body_NED.applyMatrix4(CTM);
+  CTMf.makeRotationY(angle_fluid_body);
+  XYZ_foil_body_NED.set(  -drag,0, -lift);
+  XYZ_foil_body_NED.applyMatrix4(invCTM);
   
   // Compute torque
-  rpy = new THREE.Euler( 0, 0, 0, 'XYZ' );
-  CTM.makeRotationFromEuler(rpy);
-  KMN_foil_body_FSD = tmp.crossVectors(xyz_foil_body_FSD.clone().sub(xyz_CoG_body_FSD), XYZ_foil_body_NED.clone().applyMatrix4(CTM))
+  XYZ_foil_body_FSD = XYZ_foil_body_NED.clone().applyMatrix4(CTM)
+  KMN_foil_body_FSD = tmp.clone().crossVectors(xyz_foil_body_FSD, XYZ_foil_body_FSD )
   //console.log(KMN_foil_body_FSD)
   
   // Compute forces on elevator
-  var rpy = new THREE.Euler( 0, 0, 0, 'XYZ' );
-  CTM.makeRotationFromEuler(rpy);
-  uvw_elev_grnd_NED = uvw_body_grnd_NED.clone().add(tmp.crossVectors(pqr_body_grnd_FSD, xyz_elev_body_FSD).applyMatrix4(CTM))
+  uvw_elev_grnd_NED = uvw_body_grnd_NED.clone().add(tmp.crossVectors(pqr_body_grnd_FSD, xyz_elev_body_FSD).applyMatrix4(invCTM))
   uvw_fluid_elev_NED =  uvw_fluid_grnd_NED.clone().sub(uvw_elev_grnd_NED);
   angle_fluid_body = Math.atan2(uvw_fluid_elev_NED.z, uvw_fluid_elev_NED.x);
   q = 1/2*density *Math.pow(uvw_fluid_elev_NED.length(),2);
@@ -238,18 +261,22 @@ function computeForces(){
   
   // Rotate to ground frame
   
-  CTM.makeRotationY(angle_fluid_body);
-  XYZ_elev_body_NED.set(  drag,0, lift);
-  XYZ_elev_body_NED.applyMatrix4(CTM);
+  CTMf.makeRotationY(angle_fluid_body);
+  XYZ_elev_body_NED.set(  -drag,0, -lift);
+  XYZ_elev_body_NED.applyMatrix4(invCTM);
   
   // Compute torque
-  rpy = new THREE.Euler( 0, 0, 0, 'XYZ' );
+  rpy = new THREE.Euler( 0, -pitch, 0, 'XYZ' );
   CTM.makeRotationFromEuler(rpy);
-  KMN_elev_body_FSD = tmp.crossVectors(xyz_elev_body_FSD.clone().sub(xyz_CoG_body_FSD), XYZ_elev_body_NED.clone().applyMatrix4(CTM))
+  XYZ_elev_body_FSD = XYZ_elev_body_NED.clone().applyMatrix4(CTM)
+  KMN_elev_body_FSD = tmp.clone().crossVectors(xyz_elev_body_FSD, XYZ_elev_body_FSD)
   //console.log(KMN_elev_body_FSD)
   
-  XYZ_all_body_NED = XYZ_elev_body_NED.clone().add(XYZ_foil_body_NED).add(XYZ_wght_body_NED)
-  KMN_all_body_FSD = KMN_elev_body_FSD.clone().add(KMN_foil_body_FSD)
+  XYZ_all_body_NED = XYZ_elev_body_NED.clone().add(XYZ_foil_body_NED).add(XYZ_wght_body_NED);
+  XYZ_all_body_FSD = XYZ_all_body_NED.clone().applyMatrix4(CTM)
+  KMN_all_body_FSD = KMN_elev_body_FSD.clone().add(KMN_foil_body_FSD).add(KMN_wght_body_FSD);
+  //console.log(XYZ_wght_body_FSD);
+  //console.log(KMN_wght_body_FSD);
   
 }
 function update(){
@@ -267,9 +294,11 @@ function update(){
   xyz_body_grnd_NED.add(uvw_body_grnd_NED.clone().multiplyScalar(dt))
   xyz_body_grnd_NED.x = 0
   
-  KMN_all_body_FSD
   pqr_body_grnd_FSD.add(KMN_all_body_FSD.clone().multiplyScalar(1/pitchInertia*dt));
-  
+  if (false==isPitchDynamic)
+  {
+    pqr_body_grnd_FSD.y = 0;
+  }
   pitch = pitch + pqr_body_grnd_FSD.y*dt;
   
   //console.log(xyz_body_grnd_NED)
@@ -329,19 +358,19 @@ function plotShip(){
 }
 function plotWeight(){
   arrow = document.getElementById("Fweight");
-  arrow.setAttribute('d', "M"+ 0*meter2pix +" "+ 0*meter2pix+ " L"+ XYZ_wght_body_NED.x*Newton2meter*meter2pix +" "+ XYZ_wght_body_NED.z*Newton2meter*meter2pix);
+  arrow.setAttribute('d', "M"+ 0*meter2pix +" "+ 0*meter2pix+ " L"+ XYZ_wght_body_FSD.x*Newton2meter*meter2pix +" "+ XYZ_wght_body_FSD.z*Newton2meter*meter2pix);
 }
 function plotFfoil(){
   arrow = document.getElementById("Ffoil");
-  arrow.setAttribute('d', "M"+ 0*meter2pix +" "+ 0*meter2pix+ " L"+ XYZ_foil_body_NED.x*Newton2meter*meter2pix +" "+ XYZ_foil_body_NED.z*Newton2meter*meter2pix);
+  arrow.setAttribute('d', "M"+ 0*meter2pix +" "+ 0*meter2pix+ " L"+ XYZ_foil_body_FSD.x*Newton2meter*meter2pix +" "+ XYZ_foil_body_FSD.z*Newton2meter*meter2pix);
 }
 function plotFelevator(){
   arrow = document.getElementById("Felevator");
-  arrow.setAttribute('d', "M"+ 0*meter2pix +" "+ 0*meter2pix+ " L"+ XYZ_elev_body_NED.x*Newton2meter*meter2pix +" "+ XYZ_elev_body_NED.z*Newton2meter*meter2pix);
+  arrow.setAttribute('d', "M"+ 0*meter2pix +" "+ 0*meter2pix+ " L"+ XYZ_elev_body_FSD.x*Newton2meter*meter2pix +" "+ XYZ_elev_body_FSD.z*Newton2meter*meter2pix);
 }
 function plotFall(){
   arrow = document.getElementById("Fall");
-  arrow.setAttribute('d', "M"+ 0*meter2pix +" "+ 0*meter2pix+ " L"+ XYZ_all_body_NED.x*Newton2meter*meter2pix +" "+ XYZ_all_body_NED.z*Newton2meter*meter2pix);
+  arrow.setAttribute('d', "M"+ 0*meter2pix +" "+ 0*meter2pix+ " L"+ XYZ_all_body_FSD.x*Newton2meter*meter2pix +" "+ XYZ_all_body_FSD.z*Newton2meter*meter2pix);
 }
 
 function updatePitch(){
@@ -429,7 +458,9 @@ function updateLongitudinalCenterOfInertiaPosition(){
 		var myOutput = document.getElementById("CGLongi");
 		//copy the value over
 		myOutput.value = myRange.value;
-    xyz_CoG_body_FSD.x  = myOutput.value;
+    xyz_CoG_ref_FSD.x = myOutput.value;
+    xyz_CoG_body_FSD = xyz_CoG_ref_FSD.clone().sub(xyz_body_ref_FSD);
+    
 }
 function updateVerticalUpCenterOfInertiaPosition(){
 		//get elements
@@ -437,7 +468,8 @@ function updateVerticalUpCenterOfInertiaPosition(){
 		var myOutput = document.getElementById("CGVertUp");
 		//copy the value over
 		myOutput.value = myRange.value;
-    xyz_CoG_body_FSD.z = -myOutput.value;
+    xyz_CoG_ref_FSD.z = -myOutput.value;
+    xyz_CoG_body_FSD = xyz_CoG_ref_FSD.clone().sub(xyz_body_ref_FSD);
 }
 function updateGravity(){
 		//get elements
@@ -491,7 +523,8 @@ function updateElevatorLongitudinalPosition(){
 		var myOutput = document.getElementById("elevatorLongi");
 		//copy the value over
 		myOutput.value = myRange.value;
-    xyz_elev_body_FSD.x = myOutput.value;
+    xyz_elev_ref_FSD.x = myOutput.value;
+    xyz_elev_body_FSD = xyz_elev_ref_FSD.clone().sub(xyz_body_ref_FSD);
 }
 function updateFoilLongitudinalPosition(){
 		//get elements
@@ -499,7 +532,8 @@ function updateFoilLongitudinalPosition(){
 		var myOutput = document.getElementById("foilLongi");
 		//copy the value over
 		myOutput.value = myRange.value;
-    xyz_foil_body_FSD.x = myOutput.value;
+    xyz_foil_ref_FSD.x = myOutput.value;
+    xyz_foil_body_FSD = xyz_foil_ref_FSD.clone().sub(xyz_body_ref_FSD);
 }
 function updateElevatorVerticalUpPosition(){
 		//get elements
@@ -507,7 +541,8 @@ function updateElevatorVerticalUpPosition(){
 		var myOutput = document.getElementById("elevatorVertUp");
 		//copy the value over
 		myOutput.value = myRange.value;
-    xyz_elev_body_FSD.z = -myOutput.value;
+    xyz_elev_ref_FSD.z = -myOutput.value;
+    xyz_elev_body_FSD = xyz_elev_ref_FSD.clone().sub(xyz_body_ref_FSD);
 }
 function updateFoilVerticalUpPosition(){
 		//get elements
@@ -515,7 +550,8 @@ function updateFoilVerticalUpPosition(){
 		var myOutput = document.getElementById("foilVertUp");
 		//copy the value over
 		myOutput.value = myRange.value;
-    xyz_foil_body_FSD.z = -myOutput.value;
+    xyz_foil_ref_FSD.z = -myOutput.value;
+    xyz_foil_body_FSD = xyz_foil_ref_FSD.clone().sub(xyz_body_ref_FSD);
 }
 function updateOutput(){
     
