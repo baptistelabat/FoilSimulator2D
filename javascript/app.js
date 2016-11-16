@@ -98,9 +98,11 @@ xyz_CoG_ref_FSD     = new THREE.Vector3( 0, 0, 0 );
 xyz_CoG_body_FSD    = new THREE.Vector3( 0, 0, 0 );
 xyz_foil_ref_FSD    = new THREE.Vector3( 0, 0, 0 );
 xyz_foil_body_FSD   = new THREE.Vector3( 0, 0, 0 );
+xyz_foil_grnd_NED   = new THREE.Vector3( 0, 0, 0 );
 uvw_foil_grnd_NED   = new THREE.Vector3( 0, 0, 0 );
 xyz_elev_ref_FSD    = new THREE.Vector3( 0, 0, 0 );
 xyz_elev_body_FSD   = new THREE.Vector3( 0, 0, 0 );
+xyz_foil_grnd_FSD   = new THREE.Vector3( 0, 0, 0 );
 uvw_elev_grnd_NED   = new THREE.Vector3( 0, 0, 0 );
 
 xyz_meas_ref_FSD    = new THREE.Vector3( 0, 0, 0 );
@@ -137,7 +139,7 @@ document.getElementById("foilRakeRange")            .addEventListener("change", 
 document.getElementById("flightSpeedRange")         .addEventListener("change", updateFlightSpeed);
 document.getElementById("massRange")                .addEventListener("change", updateMass);
 document.getElementById("CGLongiRange")             .addEventListener("change", updateLongitudinalCenterOfInertiaPosition);
-document.getElementById("CGVertUpRange")              .addEventListener("change", updateVerticalUpCenterOfInertiaPosition);
+document.getElementById("CGVertUpRange")            .addEventListener("change", updateVerticalUpCenterOfInertiaPosition);
 document.getElementById("gravityCheck")             .addEventListener("change", updateGravity);
 document.getElementById("pitchInertiaRange")        .addEventListener("change", updatePitchInertia);
 document.getElementById("elevatorAreaRange")        .addEventListener("change", updateElevatorArea);
@@ -146,8 +148,10 @@ document.getElementById("elevatorAspectRatioRange") .addEventListener("change", 
 document.getElementById("foilAspectRatioRange")     .addEventListener("change", updateFoilAspectRatio);
 document.getElementById("elevatorLongiRange")       .addEventListener("change", updateElevatorLongitudinalPosition);
 document.getElementById("foilLongiRange")           .addEventListener("change", updateFoilLongitudinalPosition);
-document.getElementById("elevatorVertUpRange")        .addEventListener("change", updateElevatorVerticalUpPosition);
-document.getElementById("foilVertUpRange")            .addEventListener("change", updateFoilVerticalUpPosition);
+document.getElementById("elevatorVertUpRange")      .addEventListener("change", updateElevatorVerticalUpPosition);
+document.getElementById("foilVertUpRange")          .addEventListener("change", updateFoilVerticalUpPosition);
+document.getElementById("bodyLongiRange")           .addEventListener("change", updateBodyLongitudinalPosition);
+document.getElementById("bodyVertUpRange")          .addEventListener("change", updateBodyVerticalUpPosition);
 document.getElementById("fluidSelect")              .addEventListener("change", updateFluid);
 
 setInterval(updaten, 1);
@@ -179,6 +183,8 @@ function init(){
   updateFoilLongitudinalPosition();
   updateElevatorVerticalUpPosition();
   updateFoilVerticalUpPosition();
+  updateBodyLongitudinalPosition();
+  updateBodyVerticalUpPosition();
   updateFluid();
 }
 init();
@@ -190,13 +196,14 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
   plotFfoil();
   plotFelevator();
   plotFall();
-  rotateFoil(foil_rake);
+  translateBody(xyz_body_grnd_NED.x, xyz_body_grnd_NED.z);
   rotateBody(pitch);
-  rotateElevator(elevator_rake);
+  translateRef(-xyz_body_ref_FSD.x, -xyz_body_ref_FSD.z);
   translateFoil(xyz_foil_ref_FSD.x, xyz_foil_ref_FSD.z);
   translateElevator(xyz_elev_ref_FSD.x, xyz_elev_ref_FSD.z);
   translateCenterOfInertia(xyz_CoG_ref_FSD.x, xyz_CoG_ref_FSD.z);
-  translateBody(xyz_body_grnd_NED.x, xyz_body_grnd_NED.z);
+  rotateFoil(foil_rake);
+  rotateElevator(elevator_rake); 
 }
 function updatePlot(){
   plot(xyz_body_grnd_NED,xyz_foil_body_FSD, xyz_elev_body_FSD, foilRake, elevatorRake, pitch);
@@ -235,7 +242,10 @@ function computeForces(){
   angle_fluid_body = Math.atan2(uvw_fluid_foil_NED.z, uvw_fluid_foil_NED.x);
   q = 1/2*density *Math.pow(uvw_fluid_foil_NED.length(),2);
   AoA = pitch + foilRake + angle_fluid_body
-  lift   = q*foilArea*liftCoefficient(AoA, foilAspectRatio);
+    xyz_foil_grnd_NED = xyz_foil_body_FSD.clone().applyMatrix4(invCTM).add(xyz_body_grnd_NED)
+  chord = Math.sqrt(foilArea/foilAspectRatio);
+  inverseMirrorEffect = (1-Math.exp(Math.min(0,-xyz_foil_grnd_NED.z)/chord));
+  lift   = q*foilArea*liftCoefficient(AoA, foilAspectRatio)*inverseMirrorEffect;
   drag   = q*foilArea*dragCoefficient(AoA, foilAspectRatio);
   
   // Rotate to ground frame
@@ -255,8 +265,12 @@ function computeForces(){
   angle_fluid_body = Math.atan2(uvw_fluid_elev_NED.z, uvw_fluid_elev_NED.x);
   q = 1/2*density *Math.pow(uvw_fluid_elev_NED.length(),2);
   
+
+  xyz_elev_grnd_NED = xyz_elev_body_FSD.clone().applyMatrix4(invCTM).add(xyz_body_grnd_NED)
   AoA = pitch + elevatorRake + angle_fluid_body
-  lift   = q*foilArea*liftCoefficient(AoA, elevatorAspectRatio);
+  chord = Math.sqrt(elevatorArea/elevatorAspectRatio);
+  inverseMirrorEffect = (1-Math.exp(Math.min(0,-xyz_elev_grnd_NED.z)/chord));
+  lift   = q*foilArea*liftCoefficient(AoA, elevatorAspectRatio)*inverseMirrorEffect;
   drag   = q*foilArea*dragCoefficient(AoA, elevatorAspectRatio);
   
   // Rotate to ground frame
@@ -336,6 +350,10 @@ function translateCenterOfInertia(x, z){
 function translateBody(x, z){
   body_frame = document.getElementById("body_frame");
   body_frame.setAttribute('transform', 'translate(' +x*meter2pix +','+ z*meter2pix +')');
+}
+function translateRef(x, z){
+  ref_frame = document.getElementById("ref_frame");
+  ref_frame.setAttribute('transform', 'translate(' +x*meter2pix +','+ z*meter2pix +')');
 }
 
 function plotFoil(){
@@ -552,6 +570,22 @@ function updateFoilVerticalUpPosition(){
 		myOutput.value = myRange.value;
     xyz_foil_ref_FSD.z = -myOutput.value;
     xyz_foil_body_FSD = xyz_foil_ref_FSD.clone().sub(xyz_body_ref_FSD);
+}
+function updateBodyLongitudinalPosition(){
+		//get elements
+		var myRange = document.getElementById("bodyLongiRange");
+		var myOutput = document.getElementById("bodyLongi");
+		//copy the value over
+		myOutput.value = myRange.value;
+    xyz_body_ref_FSD.x = myOutput.value;
+}
+function updateBodyVerticalUpPosition(){
+		//get elements
+		var myRange = document.getElementById("bodyVertUpRange");
+		var myOutput = document.getElementById("bodyVertUp");
+		//copy the value over
+		myOutput.value = myRange.value;
+    xyz_body_ref_FSD.z = -myOutput.value;
 }
 function updateOutput(){
     

@@ -21,18 +21,20 @@
             <line id="grnd" x1="-1000" y1="-000" x2="1000" y2="000" style="stroke:rgb(0,0,255);stroke-width:2" />
             <g id="body_frame" transform="translate(0,0)">
               <g id="body__rotate_frame" transform="translate(0,0)">
-              <line id="keel" x1="0" y1="12.5" x2="750" y2="12.5" style="stroke:rgb(0,0,0);stroke-width:2" />
-                <g id="CoG_frame" transform="translate(0,-0)">
-                  <path id="Fweight" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/>
-                  <path id="Fall" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="red"/>
+                <g id="ref_frame" transform="translate(0,-0)">
+                  <line id="keel" x1="0" y1="12.5" x2="750" y2="12.5" style="stroke:rgb(0,0,0);stroke-width:2" />
+                  <g id="CoG_frame" transform="translate(0,-0)">
+                    <path id="Fweight" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/>
+                    <path id="Fall" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="red"/>
+                  </g>
+                  <g id="elevator_frame" transform="translate(0,-0)">
+                    <line id="elevator" x1="0" y1="0" x2="10" y2="00" style="stroke:rgb(0,0,0);stroke-width:2" />
+                    <path id="Felevator" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/> 
+                  </g>
+                <g id="foil_frame" transform="rotate(0)">
+                  <line id="foil" x1="0" y1="0" x2="10" y2="0" style="stroke:rgb(255,0,0);stroke-width:2" />
+                  <path id="Ffoil" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/> 
                 </g>
-                <g id="elevator_frame" transform="translate(0,-0)">
-                  <line id="elevator" x1="0" y1="0" x2="10" y2="00" style="stroke:rgb(0,0,0);stroke-width:2" />
-                  <path id="Felevator" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/> 
-                </g>
-              <g id="foil_frame" transform="rotate(0)">
-                <line id="foil" x1="0" y1="0" x2="10" y2="0" style="stroke:rgb(255,0,0);stroke-width:2" />
-                <path id="Ffoil" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/> 
               </g>
               </g>
             </g>
@@ -48,7 +50,7 @@
 				value = "0"
 				step = "0.1" />
 			<output id = "pitch">2</output>°
-        Is dynamic? <input type="checkbox" id="pitchDynamicCheck" checked =true>
+        Is dynamic? <input type="checkbox" id="pitchDynamicCheck" checked =false>
      </fieldset>
      <fieldset>
       Height
@@ -59,7 +61,7 @@
 				value = "0"
 				step = "0.01" />
 			<output id = "heave">2</output>m
-        Is dynamic? <input type="checkbox" id="heaveDynamicCheck" checked =true>
+        Is dynamic? <input type="checkbox" id="heaveDynamicCheck" checked =false>
      </fieldset>
 		<fieldset>
       Elevator Rake Angle
@@ -198,6 +200,24 @@
 				value = "-2"
 				step = "0.01" />
 			<output id = "foilVertUp">2</output>m
+      </fieldset>
+            <fieldset>
+          Computational reference point longitudinal coordinates
+			<input id = "bodyLongiRange"
+				type = "range"
+				min = "-10"
+				max = "10"
+				value = "6"
+				step = "0.01" />
+			<output id = "bodyLongi">2</output>m
+      Computational reference point vertical coordinates
+			<input id = "bodyVertUpRange"
+				type = "range"
+				min = "-10"
+				max = "10"
+				value = "0"
+				step = "0.01" />
+			<output id = "bodyVertUp">2</output>m
       </fieldset>
       <fieldset>
       <select id="fluidSelect">
