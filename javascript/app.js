@@ -64,7 +64,7 @@ Newton2meter = 0.00001
 // Initial condition
 var V = 10;
 pqr0          = 0;    // Angular rate
-pitch=0*Math.PI/180;
+pitch=2.3*Math.PI/180;
 rakeMeanPower = 0
 
 // NED (North, East, Down) convention is used
@@ -91,7 +91,7 @@ rakeMeanPower = 0
 
 // Position coordinates are given relative to the hull reference point which is aft, at MWP (waterline in equilibrium condition)
 uvw_fluid_grnd_NED  = new THREE.Vector3( 0, 0, 0 );
-xyz_body_grnd_NED   = new THREE.Vector3( 0, 0, 0 );
+xyz_body_grnd_NED   = new THREE.Vector3( 0, 0, -1.2 );
 xyz_body_ref_FSD    = new THREE.Vector3( 0, 0, 0 );
 uvw_body_grnd_NED   = new THREE.Vector3( V, 0, 0 );
 xyz_CoG_ref_FSD     = new THREE.Vector3( 0, 0, 0 );
