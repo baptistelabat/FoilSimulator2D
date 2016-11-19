@@ -51,6 +51,8 @@ foilArea            = 1;
 elevatorArea        = 0.19*2;
 foilAspectRatio     = 5;
 elevatorAspectRatio = 5;
+initialDraft = 0.25
+Lpp=13
 
 // Simulation parameter
 sampleTime      = 0.0005; // Sample time
@@ -105,20 +107,37 @@ xyz_elev_body_FSD   = new THREE.Vector3( 0, 0, 0 );
 xyz_foil_grnd_FSD   = new THREE.Vector3( 0, 0, 0 );
 uvw_elev_grnd_NED   = new THREE.Vector3( 0, 0, 0 );
 
+// Hull extremity for archimedian thrust
+xyz_hAB_ref_FSD = new THREE.Vector3( 0, 0, initialDraft);//Hull Aft Bottom
+xyz_hFB_ref_FSD = new THREE.Vector3( Lpp, 0, initialDraft);//Hull fore Bottom
+xyz_hAT_ref_FSD = new THREE.Vector3( 0, 0, -1);//Hull Aft Top
+xyz_hFT_ref_FSD = new THREE.Vector3( Lpp, 0, -1);//Hull fore Top
+
+xyz_buoyancy_ref_FSD = new THREE.Vector3( 0, 0, 0 );
+xyz_buoyancy_body_FSD= new THREE.Vector3( 0, 0, 0 );
+xyz_buoyancy_grnd_NED = new THREE.Vector3( 0, 0, 0 );
+
+// Sensor
 xyz_meas_ref_FSD    = new THREE.Vector3( 0, 0, 0 );
 xyz_meas_body_FSD   = new THREE.Vector3( 0, 0, 0 );
 
+// Forces vectors
 XYZ_foil_body_NED    = new THREE.Vector3( 0, 0, 0 );
 XYZ_elev_body_NED    = new THREE.Vector3( 0, 0, 0 );
 XYZ_wght_body_NED    = new THREE.Vector3( 0, 0, 0 );
+XYZ_buoyancy_body_NED = new THREE.Vector3( 0, 0, 0 );
 XYZ_all_body_NED     = new THREE.Vector3( 0, 0, 0 );
 XYZ_foil_body_FSD    = new THREE.Vector3( 0, 0, 0 );
 XYZ_elev_body_FSD    = new THREE.Vector3( 0, 0, 0 );
 XYZ_wght_body_FSD    = new THREE.Vector3( 0, 0, 0 );
+XYZ_buoyancy_body_FSD = new THREE.Vector3( 0, 0, 0 );
 XYZ_all_body_FSD     = new THREE.Vector3( 0, 0, 0 );
+
+// Torque vectors
 KMN_foil_body_FSD    = new THREE.Vector3( 0, 0, 0 );
 KMN_elev_body_FSD    = new THREE.Vector3( 0, 0, 0 );
 KMN_wght_body_FSD    = new THREE.Vector3( 0, 0, 0 );
+KMN_buoyancy_body_FSD = new THREE.Vector3( 0, 0, 0 );
 KMN_all_body_FSD     = new THREE.Vector3( 0, 0, 0 );
 pqr_body_grnd_FSD    = new THREE.Vector3( 0, 0, 0 );
 
@@ -192,6 +211,7 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
   plotFoil();
   plotElevator();
   plotWeight();
+  plotBuoyancy();
   plotShip();
   plotFfoil();
   plotFelevator();
@@ -199,6 +219,7 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
   translateBody(xyz_body_grnd_NED.x, xyz_body_grnd_NED.z);
   rotateBody(pitch);
   translateRef(-xyz_body_ref_FSD.x, -xyz_body_ref_FSD.z);
+  translateBuoyancy(xyz_buoyancy_ref_FSD.x, xyz_buoyancy_ref_FSD.z)
   translateFoil(xyz_foil_ref_FSD.x, xyz_foil_ref_FSD.z);
   translateElevator(xyz_elev_ref_FSD.x, xyz_elev_ref_FSD.z);
   translateCenterOfInertia(xyz_CoG_ref_FSD.x, xyz_CoG_ref_FSD.z);
@@ -218,6 +239,7 @@ function updaten()
 }
 
 function computeForces(){
+  computeBuoyancy()
   CTM = new THREE.Matrix4;
   invCTM = new THREE.Matrix4;
   CTMf = new THREE.Matrix4;
@@ -286,11 +308,11 @@ function computeForces(){
   KMN_elev_body_FSD = tmp.clone().crossVectors(xyz_elev_body_FSD, XYZ_elev_body_FSD)
   //console.log(KMN_elev_body_FSD)
   
-  XYZ_all_body_NED = XYZ_elev_body_NED.clone().add(XYZ_foil_body_NED).add(XYZ_wght_body_NED);
+  XYZ_all_body_NED = XYZ_elev_body_NED.clone().add(XYZ_foil_body_NED).add(XYZ_wght_body_NED).add(XYZ_buoyancy_body_NED);
   XYZ_all_body_FSD = XYZ_all_body_NED.clone().applyMatrix4(CTM)
-  KMN_all_body_FSD = KMN_elev_body_FSD.clone().add(KMN_foil_body_FSD).add(KMN_wght_body_FSD);
+  KMN_all_body_FSD = KMN_elev_body_FSD.clone().add(KMN_foil_body_FSD).add(KMN_wght_body_FSD).add(KMN_buoyancy_body_FSD);
   //console.log(XYZ_wght_body_FSD);
-  //console.log(KMN_wght_body_FSD);
+  console.log(KMN_wght_body_FSD);
   
 }
 function update(){
@@ -347,6 +369,10 @@ function translateCenterOfInertia(x, z){
   elevator_frame = document.getElementById("CoG_frame");
   elevator_frame.setAttribute('transform', 'translate(' +x*meter2pix +','+ z*meter2pix +')');
 }
+function translateBuoyancy(x,z){
+  B_frame = document.getElementById("B_frame");
+  B_frame.setAttribute('transform', 'translate(' +x*meter2pix +','+ z*meter2pix +')');
+}
 function translateBody(x, z){
   body_frame = document.getElementById("body_frame");
   body_frame.setAttribute('transform', 'translate(' +x*meter2pix +','+ z*meter2pix +')');
@@ -377,6 +403,10 @@ function plotShip(){
 function plotWeight(){
   arrow = document.getElementById("Fweight");
   arrow.setAttribute('d', "M"+ 0*meter2pix +" "+ 0*meter2pix+ " L"+ XYZ_wght_body_FSD.x*Newton2meter*meter2pix +" "+ XYZ_wght_body_FSD.z*Newton2meter*meter2pix);
+}
+function plotBuoyancy(){
+  arrow = document.getElementById("Fbuoyancy");
+  arrow.setAttribute('d', "M"+ 0*meter2pix +" "+ 0*meter2pix+ " L"+ XYZ_buoyancy_body_FSD.x*Newton2meter*meter2pix +" "+ XYZ_buoyancy_body_FSD.z*Newton2meter*meter2pix);
 }
 function plotFfoil(){
   arrow = document.getElementById("Ffoil");
@@ -476,7 +506,7 @@ function updateLongitudinalCenterOfInertiaPosition(){
 		var myOutput = document.getElementById("CGLongi");
 		//copy the value over
 		myOutput.value = myRange.value;
-    xyz_CoG_ref_FSD.x = myOutput.value;
+    xyz_CoG_ref_FSD.x = myOutput.value*1.;
     xyz_CoG_body_FSD = xyz_CoG_ref_FSD.clone().sub(xyz_body_ref_FSD);
     
 }
@@ -541,7 +571,7 @@ function updateElevatorLongitudinalPosition(){
 		var myOutput = document.getElementById("elevatorLongi");
 		//copy the value over
 		myOutput.value = myRange.value;
-    xyz_elev_ref_FSD.x = myOutput.value;
+    xyz_elev_ref_FSD.x = myOutput.value*1.;
     xyz_elev_body_FSD = xyz_elev_ref_FSD.clone().sub(xyz_body_ref_FSD);
 }
 function updateFoilLongitudinalPosition(){
@@ -550,7 +580,7 @@ function updateFoilLongitudinalPosition(){
 		var myOutput = document.getElementById("foilLongi");
 		//copy the value over
 		myOutput.value = myRange.value;
-    xyz_foil_ref_FSD.x = myOutput.value;
+    xyz_foil_ref_FSD.x = myOutput.value*1.;
     xyz_foil_body_FSD = xyz_foil_ref_FSD.clone().sub(xyz_body_ref_FSD);
 }
 function updateElevatorVerticalUpPosition(){
@@ -559,7 +589,7 @@ function updateElevatorVerticalUpPosition(){
 		var myOutput = document.getElementById("elevatorVertUp");
 		//copy the value over
 		myOutput.value = myRange.value;
-    xyz_elev_ref_FSD.z = -myOutput.value;
+    xyz_elev_ref_FSD.z = -myOutput.value*1.;
     xyz_elev_body_FSD = xyz_elev_ref_FSD.clone().sub(xyz_body_ref_FSD);
 }
 function updateFoilVerticalUpPosition(){
@@ -577,15 +607,20 @@ function updateBodyLongitudinalPosition(){
 		var myOutput = document.getElementById("bodyLongi");
 		//copy the value over
 		myOutput.value = myRange.value;
-    xyz_body_ref_FSD.x = myOutput.value;
+    xyz_body_ref_FSD.x = myOutput.value*1.;
+
 }
 function updateBodyVerticalUpPosition(){
 		//get elements
 		var myRange = document.getElementById("bodyVertUpRange");
 		var myOutput = document.getElementById("bodyVertUp");
 		//copy the value over
-		myOutput.value = myRange.value;
+		myOutput.value = myRange.value*1.;
     xyz_body_ref_FSD.z = -myOutput.value;
+    xyz_foil_body_FSD = xyz_foil_ref_FSD.clone().sub(xyz_body_ref_FSD);
+    xyz_elev_body_FSD = xyz_elev_ref_FSD.clone().sub(xyz_body_ref_FSD);
+    xyz_CoG_body_FSD = xyz_CoG_ref_FSD.clone().sub(xyz_body_ref_FSD);
+    
 }
 function updateOutput(){
     
@@ -609,5 +644,90 @@ function updateFluid(){
   }
   
 }
+
+function computeBarycenter3(P1,P2,P3)
+{
+  P=P1.clone().add(P2).add(P3).multiplyScalar(1/3.)
+  return P
+}
+function computeBuoyancy()
+{  
+  volume = 0
+  CTM = new THREE.Matrix4;
+  invCTM = new THREE.Matrix4;
+  var rpy = new THREE.Euler( 0, -pitch, 0, 'XYZ' );
+  tmp    = new THREE.Vector3( 0, 0, 0 );
+  tmp1    = new THREE.Vector3( 0, 0, 0 );
+  tmp2    = new THREE.Vector3( 0, 0, 0 );
+  
+
+  CTM.makeRotationFromEuler(rpy);
+  invCTM.getInverse(CTM);
+  xyz_ref_grnd_NED = xyz_body_ref_FSD.clone().multiplyScalar(-1).applyMatrix4(invCTM).add(xyz_body_grnd_NED)
+  xyz_hAB_grnd_NED = xyz_hAB_ref_FSD.clone().applyMatrix4(invCTM).add(xyz_ref_grnd_NED)
+  xyz_hFB_grnd_NED = xyz_hFB_ref_FSD.clone().applyMatrix4(invCTM).add(xyz_ref_grnd_NED)
+  xyz_hAT_grnd_NED = xyz_hAT_ref_FSD.clone().applyMatrix4(invCTM).add(xyz_ref_grnd_NED)
+  xyz_hFT_grnd_NED = xyz_hFT_ref_FSD.clone().applyMatrix4(invCTM).add(xyz_ref_grnd_NED)
+  
+  // deals only with most likely case
+  if ((xyz_hAB_grnd_NED.z<=0)&(xyz_hFB_grnd_NED.z<=0))
+  { // the hull is fully out of water
+    volume = 0
+    if (xyz_hAB_grnd_NED.z<xyz_hFB_grnd_NED.z)
+    {
+      // Take the most down point to ensure continuity
+      xyz_hullCenter_grnd_NED = xyz_hFB_grnd_NED.clone()
+    }
+    else{
+      if (xyz_hAB_grnd_NED.z==xyz_hFB_grnd_NED.z)
+      {
+        //Take the mean
+        xyz_hullCenter_grnd_NED = xyz_hAB_grnd_NED.clone().add(xyz_hFB_grnd_NED).multiplyScalar(1/2.)
+      }
+      else{
+        xyz_hullCenter_grnd_NED = xyz_hAB_grnd_NED.clone()
+      }
+    }
+  }
+  else
+  {
+    if ((xyz_hAB_grnd_NED.z>=0)&(xyz_hFB_grnd_NED.z<=0))
+    { // Only bottom aft corner is in the water
+      
+      // use Thales to compute intersection points
+      tmp1 = xyz_hAB_grnd_NED.clone().add(xyz_hAT_grnd_NED.clone().sub(xyz_hAB_grnd_NED).multiplyScalar(xyz_hAB_grnd_NED.z/(xyz_hAB_grnd_NED.z-xyz_hAT_grnd_NED.z)));
+      tmp2 = xyz_hAB_grnd_NED.clone().add(xyz_hFB_grnd_NED.clone().sub(xyz_hAB_grnd_NED).multiplyScalar(xyz_hAB_grnd_NED.z/(xyz_hAB_grnd_NED.z-xyz_hFB_grnd_NED.z)));
+      xyz_buoyancy_grnd_NED = computeBarycenter3(tmp1,tmp2,xyz_hAB_grnd_NED);
+      volume = tmp.crossVectors(tmp1.sub(xyz_hAB_grnd_NED), tmp2.sub(xyz_hAB_grnd_NED)).length()/2;
+      
+    }
+    if ((xyz_hFB_grnd_NED.z>=0)&(xyz_hAB_grnd_NED.z<=0))
+    { // Only bottom fore corner is in the water
+      
+      // use Thales to compute intersection points
+      tmp1 = xyz_hFB_grnd_NED.clone().add(xyz_hFT_grnd_NED.clone().sub(xyz_hFB_grnd_NED).multiplyScalar(xyz_hFB_grnd_NED.z/(xyz_hFB_grnd_NED.z-xyz_hFT_grnd_NED.z)));
+      tmp2 = xyz_hFB_grnd_NED.clone().add(xyz_hAB_grnd_NED.clone().sub(xyz_hFB_grnd_NED).multiplyScalar(xyz_hFB_grnd_NED.z/(xyz_hFB_grnd_NED.z-xyz_hAB_grnd_NED.z)));
+      xyz_buoyancy_grnd_NED = computeBarycenter3(tmp1,tmp2,xyz_hFB_grnd_NED);
+      volume = tmp.crossVectors(tmp1.sub(xyz_hFB_grnd_NED), tmp2.sub(xyz_hFB_grnd_NED)).length()/2;
+      
+    }
+    if ((xyz_hFB_grnd_NED.z>=0)&(xyz_hAB_grnd_NED.z>=0))
+    { // Two bottom points in the water
+      tmp1 = xyz_hAB_grnd_NED.clone().add(xyz_hAT_grnd_NED.clone().sub(xyz_hAB_grnd_NED).multiplyScalar(xyz_hAB_grnd_NED.z/(xyz_hAB_grnd_NED.z-xyz_hAT_grnd_NED.z)));
+      tmp2 = xyz_hFB_grnd_NED.clone().add(xyz_hFT_grnd_NED.clone().sub(xyz_hFB_grnd_NED).multiplyScalar(xyz_hFB_grnd_NED.z/(xyz_hFB_grnd_NED.z-xyz_hFT_grnd_NED.z)));
+      volume1 = tmp.crossVectors(tmp1.clone().sub(xyz_hAB_grnd_NED), xyz_hFB_grnd_NED.clone().sub(xyz_hAB_grnd_NED)).length()/2;
+      volume2 = tmp.crossVectors(tmp1.clone().sub(xyz_hFB_grnd_NED), tmp2.clone().sub(xyz_hFB_grnd_NED)).length()/2;
+      xyz_buoyancy_grnd_NED = computeBarycenter3(tmp1,xyz_hFB_grnd_NED,xyz_hAB_grnd_NED).multiplyScalar(volume1).add(computeBarycenter3(tmp1,tmp2,xyz_hFB_grnd_NED).multiplyScalar(volume2)).multiplyScalar(1/(volume1+volume2));
+      volume = volume1+volume2;
+    }
+  }
+  force = mass*g*volume/(Lpp*initialDraft);
+  XYZ_buoyancy_body_NED.z = -force;
+  XYZ_buoyancy_body_FSD = XYZ_buoyancy_body_NED.clone().applyMatrix4(CTM);
+  xyz_buoyancy_body_FSD = xyz_buoyancy_grnd_NED.clone().sub(xyz_body_grnd_NED).applyMatrix4(CTM);
+  xyz_buoyancy_ref_FSD = xyz_buoyancy_body_FSD.clone().add(xyz_body_ref_FSD);
+  KMN_buoyancy_body_FSD = tmp.clone().crossVectors(xyz_buoyancy_body_FSD, XYZ_buoyancy_body_FSD);
+}
+
   
   
