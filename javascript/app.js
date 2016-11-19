@@ -54,6 +54,9 @@ elevatorAspectRatio = 5;
 initialDraft = 0.25
 Lpp=13
 
+isFoilStall = false
+isElevStall = false
+
 // Simulation parameter
 sampleTime      = 0.0005; // Sample time
 isHeaveDynamic = true;
@@ -261,13 +264,25 @@ function computeForces(){
   // Compute forces on foil
   uvw_foil_grnd_NED = uvw_body_grnd_NED.clone().add(tmp.crossVectors(pqr_body_grnd_FSD, xyz_foil_body_FSD).applyMatrix4(invCTM))
   uvw_fluid_foil_NED =  uvw_fluid_grnd_NED.clone().sub(uvw_foil_grnd_NED);
-  angle_fluid_body = Math.atan2(uvw_fluid_foil_NED.z, uvw_fluid_foil_NED.x);
+  angle_fluid_body = Math.atan2(-uvw_fluid_foil_NED.z, -uvw_fluid_foil_NED.x);
   q = 1/2*density *Math.pow(uvw_fluid_foil_NED.length(),2);
   AoA = pitch + foilRake + angle_fluid_body
     xyz_foil_grnd_NED = xyz_foil_body_FSD.clone().applyMatrix4(invCTM).add(xyz_body_grnd_NED)
   chord = Math.sqrt(foilArea/foilAspectRatio);
   inverseMirrorEffect = (1-Math.exp(Math.min(0,-xyz_foil_grnd_NED.z)/chord));
-  lift   = q*foilArea*liftCoefficient(AoA, foilAspectRatio)*inverseMirrorEffect;
+  if (Math.abs(AoA)>10*Math.PI/180)
+  { isFoilStall = true}
+  if (Math.abs(AoA)<5*Math.PI/180)
+  { isFoilStall = false}
+  if (isFoilStall)
+  {   
+    stallEffect = 0.3
+  }
+  else
+  {
+    stallEffect = 1
+  }
+  lift   = q*foilArea*liftCoefficient(AoA, foilAspectRatio)*inverseMirrorEffect*stallEffect;
   drag   = q*foilArea*dragCoefficient(AoA, foilAspectRatio);
   
   // Rotate to ground frame
@@ -284,7 +299,7 @@ function computeForces(){
   // Compute forces on elevator
   uvw_elev_grnd_NED = uvw_body_grnd_NED.clone().add(tmp.crossVectors(pqr_body_grnd_FSD, xyz_elev_body_FSD).applyMatrix4(invCTM))
   uvw_fluid_elev_NED =  uvw_fluid_grnd_NED.clone().sub(uvw_elev_grnd_NED);
-  angle_fluid_body = Math.atan2(uvw_fluid_elev_NED.z, uvw_fluid_elev_NED.x);
+  angle_fluid_body = Math.atan2(-uvw_fluid_elev_NED.z, -uvw_fluid_elev_NED.x);
   q = 1/2*density *Math.pow(uvw_fluid_elev_NED.length(),2);
   
 
@@ -292,7 +307,19 @@ function computeForces(){
   AoA = pitch + elevatorRake + angle_fluid_body
   chord = Math.sqrt(elevatorArea/elevatorAspectRatio);
   inverseMirrorEffect = (1-Math.exp(Math.min(0,-xyz_elev_grnd_NED.z)/chord));
-  lift   = q*foilArea*liftCoefficient(AoA, elevatorAspectRatio)*inverseMirrorEffect;
+  if (Math.abs(AoA)>10*Math.PI/180)
+  { isElevStall = true}
+  if (Math.abs(AoA)<5*Math.PI/180)
+  { isElevStall = false}
+  if (isElevStall)
+  {   
+    stallEffect = 0.3
+  }
+  else
+  {
+    stallEffect = 1
+  }
+  lift   = q*foilArea*liftCoefficient(AoA, elevatorAspectRatio)*inverseMirrorEffect*stallEffect;
   drag   = q*foilArea*dragCoefficient(AoA, elevatorAspectRatio);
   
   // Rotate to ground frame
@@ -312,7 +339,7 @@ function computeForces(){
   XYZ_all_body_FSD = XYZ_all_body_NED.clone().applyMatrix4(CTM)
   KMN_all_body_FSD = KMN_elev_body_FSD.clone().add(KMN_foil_body_FSD).add(KMN_wght_body_FSD).add(KMN_buoyancy_body_FSD);
   //console.log(XYZ_wght_body_FSD);
-  console.log(KMN_wght_body_FSD);
+  //onsole.log(KMN_wght_body_FSD);
   
 }
 function update(){
