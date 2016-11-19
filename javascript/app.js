@@ -69,7 +69,7 @@ Newton2meter = 0.00001
 // Initial condition
 var V = 10;
 pqr0          = 0;    // Angular rate
-pitch=2.3*Math.PI/180;
+pitch=2.2*Math.PI/180;
 rakeMeanPower = 0
 
 // NED (North, East, Down) convention is used
@@ -270,6 +270,12 @@ function computeForces(){
     xyz_foil_grnd_NED = xyz_foil_body_FSD.clone().applyMatrix4(invCTM).add(xyz_body_grnd_NED)
   chord = Math.sqrt(foilArea/foilAspectRatio);
   inverseMirrorEffect = (1-Math.exp(Math.min(0,-xyz_foil_grnd_NED.z)/chord));
+  if (xyz_foil_grnd_NED.z>0)
+  {
+  inverseMirrorEffect= (1+16*Math.pow(Math.min(0,-xyz_foil_grnd_NED.z)/chord,2))/(2+16*Math.pow(Math.min(0,-xyz_foil_grnd_NED.z)/chord,2))
+  }
+  else
+  {inverseMirrorEffect = 0}
   if (Math.abs(AoA)>10*Math.PI/180)
   { isFoilStall = true}
   if (Math.abs(AoA)<5*Math.PI/180)
@@ -306,7 +312,12 @@ function computeForces(){
   xyz_elev_grnd_NED = xyz_elev_body_FSD.clone().applyMatrix4(invCTM).add(xyz_body_grnd_NED)
   AoA = pitch + elevatorRake + angle_fluid_body
   chord = Math.sqrt(elevatorArea/elevatorAspectRatio);
-  inverseMirrorEffect = (1-Math.exp(Math.min(0,-xyz_elev_grnd_NED.z)/chord));
+  if (xyz_elev_grnd_NED.z>0)
+  {
+  inverseMirrorEffect= (1+16*Math.pow(Math.min(0,-xyz_elev_grnd_NED.z)/chord,2))/(2+16*Math.pow(Math.min(0,-xyz_elev_grnd_NED.z)/chord,2))
+  }
+  else
+  {inverseMirrorEffect = 0}
   if (Math.abs(AoA)>10*Math.PI/180)
   { isElevStall = true}
   if (Math.abs(AoA)<5*Math.PI/180)
@@ -634,7 +645,17 @@ function updateBodyLongitudinalPosition(){
 		var myOutput = document.getElementById("bodyLongi");
 		//copy the value over
 		myOutput.value = myRange.value;
+		xyz_body_ref_FSD_old=xyz_body_ref_FSD_old
     xyz_body_ref_FSD.x = myOutput.value*1.;
+    xyz_foil_body_FSD = xyz_foil_ref_FSD.clone().sub(xyz_body_ref_FSD);
+    xyz_elev_body_FSD = xyz_elev_ref_FSD.clone().sub(xyz_body_ref_FSD);
+    xyz_CoG_body_FSD = xyz_CoG_ref_FSD.clone().sub(xyz_body_ref_FSD);
+    CTM = new THREE.Matrix4;
+    invCTM = new THREE.Matrix4;
+    var rpy = new THREE.Euler( 0, -pitch, 0, 'XYZ' );
+    CTM.makeRotationFromEuler(rpy);
+    invCTM.getInverse(CTM);
+    xyz_body_grnd_NED.add(xyz_body_ref_FSD.clone().sub(xyz_body_ref_FSD_old).applyMatrix4(invCTM))
 
 }
 function updateBodyVerticalUpPosition(){
@@ -643,10 +664,18 @@ function updateBodyVerticalUpPosition(){
 		var myOutput = document.getElementById("bodyVertUp");
 		//copy the value over
 		myOutput.value = myRange.value*1.;
+    xyz_body_ref_FSD_old=xyz_body_ref_FSD_old
     xyz_body_ref_FSD.z = -myOutput.value;
     xyz_foil_body_FSD = xyz_foil_ref_FSD.clone().sub(xyz_body_ref_FSD);
     xyz_elev_body_FSD = xyz_elev_ref_FSD.clone().sub(xyz_body_ref_FSD);
     xyz_CoG_body_FSD = xyz_CoG_ref_FSD.clone().sub(xyz_body_ref_FSD);
+    
+    CTM = new THREE.Matrix4;
+    invCTM = new THREE.Matrix4;
+    var rpy = new THREE.Euler( 0, -pitch, 0, 'XYZ' );
+    CTM.makeRotationFromEuler(rpy);
+    invCTM.getInverse(CTM);
+    xyz_body_grnd_NED.add(xyz_body_ref_FSD.clone().sub(xyz_body_ref_FSD_old).applyMatrix4(invCTM))
     
 }
 function updateOutput(){
