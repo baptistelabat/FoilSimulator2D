@@ -645,6 +645,7 @@ function updateBodyLongitudinalPosition(){
 		var myOutput = document.getElementById("bodyLongi");
 		//copy the value over
 		myOutput.value = myRange.value;
+    xyz_body_ref_FSD_old = new THREE.Vector3( 0, 0, 0 );
 		xyz_body_ref_FSD_old=xyz_body_ref_FSD_old
     xyz_body_ref_FSD.x = myOutput.value*1.;
     xyz_foil_body_FSD = xyz_foil_ref_FSD.clone().sub(xyz_body_ref_FSD);
@@ -664,6 +665,7 @@ function updateBodyVerticalUpPosition(){
 		var myOutput = document.getElementById("bodyVertUp");
 		//copy the value over
 		myOutput.value = myRange.value*1.;
+    xyz_body_ref_FSD_old = new THREE.Vector3( 0, 0, 0 );
     xyz_body_ref_FSD_old=xyz_body_ref_FSD_old
     xyz_body_ref_FSD.z = -myOutput.value;
     xyz_foil_body_FSD = xyz_foil_ref_FSD.clone().sub(xyz_body_ref_FSD);
