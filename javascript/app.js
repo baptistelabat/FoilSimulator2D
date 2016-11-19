@@ -732,16 +732,16 @@ function computeBuoyancy()
     if (xyz_hAB_grnd_NED.z<xyz_hFB_grnd_NED.z)
     {
       // Take the most down point to ensure continuity
-      xyz_hullCenter_grnd_NED = xyz_hFB_grnd_NED.clone()
+      xyz_buoyancy_grnd_NED = xyz_hFB_grnd_NED.clone()
     }
     else{
       if (xyz_hAB_grnd_NED.z==xyz_hFB_grnd_NED.z)
       {
         //Take the mean
-        xyz_hullCenter_grnd_NED = xyz_hAB_grnd_NED.clone().add(xyz_hFB_grnd_NED).multiplyScalar(1/2.)
+        xyz_buoyancy_grnd_NED = xyz_hAB_grnd_NED.clone().add(xyz_hFB_grnd_NED).multiplyScalar(1/2.)
       }
       else{
-        xyz_hullCenter_grnd_NED = xyz_hAB_grnd_NED.clone()
+        xyz_buoyancy_grnd_NED = xyz_hAB_grnd_NED.clone()
       }
     }
   }
