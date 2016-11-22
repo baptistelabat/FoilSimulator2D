@@ -281,11 +281,14 @@ function computeForces(){
   inverseMirrorEffect = (1-Math.exp(Math.min(0,-xyz_foil_grnd_NED.z)/chord));
   if (xyz_foil_grnd_NED.z>0)
   {
-  inverseMirrorEffect= (1+16*Math.pow(Math.min(0,-xyz_foil_grnd_NED.z)/chord,2))/(2+16*Math.pow(Math.min(0,-xyz_foil_grnd_NED.z)/chord,2))
-  if (!isSurfaceEffect) {inverseMirrorEffect=1}
+    // formula according to Hydrodynamics of High Speed Marine Vehicles equation 6.144 on page 200
+    inverseMirrorEffect= (1+16*Math.pow(Math.min(0,-xyz_foil_grnd_NED.z)/chord,2))/(2+16*Math.pow(Math.min(0,-xyz_foil_grnd_NED.z)/chord,2))
+    if (!isSurfaceEffect) {inverseMirrorEffect=1}
   }
   else
-  {inverseMirrorEffect = 0}
+  {
+    inverseMirrorEffect = 0
+  }
   if (!isSurface) {inverseMirrorEffect=1}
   if (Math.abs(AoA)>10*Math.PI/180)
   { isFoilStall = true}
@@ -325,7 +328,7 @@ function computeForces(){
   chord = Math.sqrt(elevatorArea/elevatorAspectRatio);
   if (xyz_elev_grnd_NED.z>0)
   {
-  inverseMirrorEffect= (1+16*Math.pow(Math.min(0,-xyz_elev_grnd_NED.z)/chord,2))/(2+16*Math.pow(Math.min(0,-xyz_elev_grnd_NED.z)/chord,2))
+    inverseMirrorEffect= (1+16*Math.pow(Math.min(0,-xyz_elev_grnd_NED.z)/chord,2))/(2+16*Math.pow(Math.min(0,-xyz_elev_grnd_NED.z)/chord,2))
     if (!isSurfaceEffect) {inverseMirrorEffect=1}
   }
   else
