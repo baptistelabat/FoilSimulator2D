@@ -61,6 +61,9 @@ isElevStall = false
 sampleTime      = 0.0005; // Sample time
 isHeaveDynamic = true;
 isPitchDyanmic = true;
+isBuoyancy = true;
+isSurfaceEffect=true;
+isSurface = true;
 
 // Plot parameter
 meter2pix = 50;
@@ -156,6 +159,9 @@ document.getElementById("pitchRange")               .addEventListener("change", 
 document.getElementById("pitchDynamicCheck")        .addEventListener("change", updatePitchDynamic);
 document.getElementById("heaveRange")               .addEventListener("change", updateHeave);
 document.getElementById("heaveDynamicCheck")        .addEventListener("change", updateHeaveDynamic);
+document.getElementById("surfaceCheck")             .addEventListener("change", updateSurface);
+document.getElementById("surfaceEffectCheck")       .addEventListener("change", updateSurfaceEffect);
+document.getElementById("buoyancyCheck")            .addEventListener("change", updateBuoyancy);
 document.getElementById("elevatorRakeRange")        .addEventListener("change", updateElevatorRake);
 document.getElementById("foilRakeRange")            .addEventListener("change", updateFoilRake);
 document.getElementById("flightSpeedRange")         .addEventListener("change", updateFlightSpeed);
@@ -189,6 +195,9 @@ function init(){
   updatePitchDynamic();
   updateHeave();
   updateHeaveDynamic();
+  updateSurface();
+  updateSurfaceEffect();
+  updateBuoyancy();
   updateElevatorRake();
   updateFoilRake();
   updateFlightSpeed();
@@ -273,9 +282,11 @@ function computeForces(){
   if (xyz_foil_grnd_NED.z>0)
   {
   inverseMirrorEffect= (1+16*Math.pow(Math.min(0,-xyz_foil_grnd_NED.z)/chord,2))/(2+16*Math.pow(Math.min(0,-xyz_foil_grnd_NED.z)/chord,2))
+  if (!isSurfaceEffect) {inverseMirrorEffect=1}
   }
   else
   {inverseMirrorEffect = 0}
+  if (!isSurface) {inverseMirrorEffect=1}
   if (Math.abs(AoA)>10*Math.PI/180)
   { isFoilStall = true}
   if (Math.abs(AoA)<5*Math.PI/180)
@@ -315,9 +326,11 @@ function computeForces(){
   if (xyz_elev_grnd_NED.z>0)
   {
   inverseMirrorEffect= (1+16*Math.pow(Math.min(0,-xyz_elev_grnd_NED.z)/chord,2))/(2+16*Math.pow(Math.min(0,-xyz_elev_grnd_NED.z)/chord,2))
+    if (!isSurfaceEffect) {inverseMirrorEffect=1}
   }
   else
   {inverseMirrorEffect = 0}
+  if (!isSurface) {inverseMirrorEffect=1}
   if (Math.abs(AoA)>10*Math.PI/180)
   { isElevStall = true}
   if (Math.abs(AoA)<5*Math.PI/180)
@@ -502,6 +515,21 @@ function updateHeaveDynamic(){
 		//get elements
     var myCheck = document.getElementById("heaveDynamicCheck");
     isHeaveDynamic = myCheck.checked;
+}
+function updateSurface(){
+		//get elements
+    var myCheck = document.getElementById("surfaceCheck");
+    isSurface = myCheck.checked;
+}
+function updateSurfaceEffect(){
+		//get elements
+    var myCheck = document.getElementById("surfaceEffectCheck");
+    isSurfaceEffect = myCheck.checked;
+}
+function updateBuoyancy(){
+		//get elements
+    var myCheck = document.getElementById("buoyancyCheck");
+    isBuoyancy = myCheck.checked;
 }
 function updateElevatorRake(){
 		//get elements
@@ -779,7 +807,7 @@ function computeBuoyancy()
       volume = volume1+volume2;
     }
   }
-  force = mass*g*volume/(Lpp*initialDraft);
+  force = mass*g*volume/(Lpp*initialDraft)*isBuoyancy;
   XYZ_buoyancy_body_NED.z = -force;
   XYZ_buoyancy_body_FSD = XYZ_buoyancy_body_NED.clone().applyMatrix4(CTM);
   xyz_buoyancy_body_FSD = xyz_buoyancy_grnd_NED.clone().sub(xyz_body_grnd_NED).applyMatrix4(CTM);
