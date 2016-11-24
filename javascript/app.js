@@ -65,6 +65,7 @@ isBuoyancy = true;
 isSurfaceEffect=true;
 isSurface = true;
 foilRakeDelay=0;
+foilRakeStep = 0.2
 
 // Plot parameter
 meter2pix = 50;
@@ -166,6 +167,7 @@ document.getElementById("buoyancyCheck")            .addEventListener("change", 
 document.getElementById("elevatorRakeRange")        .addEventListener("change", updateElevatorRake);
 document.getElementById("foilRakeRange")            .addEventListener("change", updateFoilRake);
 document.getElementById("foilRakeDelayRange")       .addEventListener("change", updateFoilRakeDelay);
+document.getElementById("foilRakeStepRange")        .addEventListener("change", updateFoilRakeStep);
 document.getElementById("flightSpeedRange")         .addEventListener("change", updateFlightSpeed);
 document.getElementById("massRange")                .addEventListener("change", updateMass);
 document.getElementById("CGLongiRange")             .addEventListener("change", updateLongitudinalCenterOfInertiaPosition);
@@ -219,6 +221,7 @@ function init(){
   updateElevatorRake();
   updateFoilRake();
   updateFoilRakeDelay();
+  updateFoilRakeStep();
   updateFlightSpeed();
   updateMass();
   updateLongitudinalCenterOfInertiaPosition();
@@ -577,6 +580,16 @@ function updateFoilRakeDelay(){
 		//copy the value over
 		myOutput.value = myRange.value;
 		foilRakeDelay  = myRange.value*1;
+}
+function updateFoilRakeStep(){
+		//get elements
+		var myRange = document.getElementById("foilRakeStepRange");
+		var myOutput = document.getElementById("foilRakeStep");
+		var myTarget = document.getElementById("foilRakeRange");
+		//copy the value over
+		myOutput.value = myRange.value;
+		foilRakeStep  = myRange.value*Math.PI/180;
+		myTarget.step = foilRakeStep*180/Math.PI;
 }
 
 
