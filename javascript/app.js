@@ -306,12 +306,14 @@ function computeForces(){
     // formula according to Hydrodynamics of High Speed Marine Vehicles equation 6.144 on page 200
     inverseMirrorEffect= (1+16*Math.pow(Math.min(0,-xyz_foil_grnd_NED.z)/chord,2))/(2+16*Math.pow(Math.min(0,-xyz_foil_grnd_NED.z)/chord,2))
     if (!isSurfaceEffect) {inverseMirrorEffect=1}
+	dragSurfaceEffect=1
   }
   else
   {
     inverseMirrorEffect = 0
+	dragSurfaceEffect=0
   }
-  if (!isSurface) {inverseMirrorEffect=1}
+  if (!isSurface) {inverseMirrorEffect=1;dragSurfaceEffect=1}
   if (Math.abs(AoA)>10*Math.PI/180)
   { isFoilStall = true}
   if (Math.abs(AoA)<5*Math.PI/180)
@@ -325,7 +327,7 @@ function computeForces(){
     stallEffect = 1
   }
   lift   = q*foilArea*liftCoefficient(AoA, foilAspectRatio)*inverseMirrorEffect*stallEffect;
-  drag   = q*foilArea*dragCoefficient(AoA, foilAspectRatio);
+  drag   = q*foilArea*dragCoefficient(AoA, foilAspectRatio)*dragSurfaceEffect;
   
   // Rotate to ground frame
   
@@ -352,10 +354,12 @@ function computeForces(){
   {
     inverseMirrorEffect= (1+16*Math.pow(Math.min(0,-xyz_elev_grnd_NED.z)/chord,2))/(2+16*Math.pow(Math.min(0,-xyz_elev_grnd_NED.z)/chord,2))
     if (!isSurfaceEffect) {inverseMirrorEffect=1}
+	dragSurfaceEffect =1;
   }
   else
-  {inverseMirrorEffect = 0}
-  if (!isSurface) {inverseMirrorEffect=1}
+  {inverseMirrorEffect = 0;
+	dragSurfaceEffect=0}
+  if (!isSurface) {inverseMirrorEffect=1;dragSurfaceEffect=1}
   if (Math.abs(AoA)>10*Math.PI/180)
   { isElevStall = true}
   if (Math.abs(AoA)<5*Math.PI/180)
@@ -369,7 +373,7 @@ function computeForces(){
     stallEffect = 1
   }
   lift   = q*foilArea*liftCoefficient(AoA, elevatorAspectRatio)*inverseMirrorEffect*stallEffect;
-  drag   = q*foilArea*dragCoefficient(AoA, elevatorAspectRatio);
+  drag   = q*foilArea*dragCoefficient(AoA, elevatorAspectRatio)*dragSurfaceEffect;
   
   // Rotate to ground frame
   
