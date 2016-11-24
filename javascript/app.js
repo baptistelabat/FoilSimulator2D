@@ -178,8 +178,8 @@ document.getElementById("elevatorLongiRange")       .addEventListener("change", 
 document.getElementById("foilLongiRange")           .addEventListener("change", updateFoilLongitudinalPosition);
 document.getElementById("elevatorVertUpRange")      .addEventListener("change", updateElevatorVerticalUpPosition);
 document.getElementById("foilVertUpRange")          .addEventListener("change", updateFoilVerticalUpPosition);
-document.getElementById("bodyLongiRange")           .addEventListener("change", updateBodyLongitudinalPosition);
-document.getElementById("bodyVertUpRange")          .addEventListener("change", updateBodyVerticalUpPosition);
+//document.getElementById("bodyLongiRange")           .addEventListener("change", updateBodyLongitudinalPosition);
+//document.getElementById("bodyVertUpRange")          .addEventListener("change", updateBodyVerticalUpPosition);
 document.getElementById("fluidSelect")              .addEventListener("change", updateFluid);
 
 setInterval(updaten, 1);
@@ -381,8 +381,9 @@ function update(){
   }
   uvw_body_grnd_NED.x = V
   //console.log(uvw_body_grnd_NED)
+  x_old = xyz_body_grnd_NED.x
   xyz_body_grnd_NED.add(uvw_body_grnd_NED.clone().multiplyScalar(dt))
-  xyz_body_grnd_NED.x = 0
+  xyz_body_grnd_NED.x = x_old
   
   pqr_body_grnd_FSD.add(KMN_all_body_FSD.clone().multiplyScalar(1/pitchInertia*dt));
   if (false==isPitchDynamic)
@@ -577,6 +578,9 @@ function updateLongitudinalCenterOfInertiaPosition(){
 		myOutput.value = myRange.value;
     xyz_CoG_ref_FSD.x = myOutput.value*1.;
     xyz_CoG_body_FSD = xyz_CoG_ref_FSD.clone().sub(xyz_body_ref_FSD);
+	var myRange = document.getElementById("bodyLongiRange");
+	myRange.value = myOutput.value
+	updateBodyLongitudinalPosition
     
 }
 function updateVerticalUpCenterOfInertiaPosition(){
@@ -587,6 +591,10 @@ function updateVerticalUpCenterOfInertiaPosition(){
 		myOutput.value = myRange.value;
     xyz_CoG_ref_FSD.z = -myOutput.value;
     xyz_CoG_body_FSD = xyz_CoG_ref_FSD.clone().sub(xyz_body_ref_FSD);
+	
+	var myRange = document.getElementById("bodyVertUpRange");
+	myRange.value = myOutput.value
+	updateBodyVerticalUpPosition
 }
 function updateGravity(){
 		//get elements
@@ -677,7 +685,7 @@ function updateBodyLongitudinalPosition(){
 		//copy the value over
 		myOutput.value = myRange.value;
     xyz_body_ref_FSD_old = new THREE.Vector3( 0, 0, 0 );
-		xyz_body_ref_FSD_old=xyz_body_ref_FSD_old
+	xyz_body_ref_FSD_old=xyz_body_ref_FSD.clone()
     xyz_body_ref_FSD.x = myOutput.value*1.;
     xyz_foil_body_FSD = xyz_foil_ref_FSD.clone().sub(xyz_body_ref_FSD);
     xyz_elev_body_FSD = xyz_elev_ref_FSD.clone().sub(xyz_body_ref_FSD);
@@ -687,8 +695,11 @@ function updateBodyLongitudinalPosition(){
     var rpy = new THREE.Euler( 0, -pitch, 0, 'XYZ' );
     CTM.makeRotationFromEuler(rpy);
     invCTM.getInverse(CTM);
-    xyz_body_grnd_NED.add(xyz_body_ref_FSD.clone().sub(xyz_body_ref_FSD_old).applyMatrix4(invCTM))
-
+    xyz_body_grnd_NED.add((xyz_body_ref_FSD.clone().sub(xyz_body_ref_FSD_old)).applyMatrix4(invCTM))
+	var myRange = document.getElementById("heaveRange");
+	var myOutput = document.getElementById("heave");
+	myRange.value = -xyz_body_grnd_NED.z
+	myOutput.value = -xyz_body_grnd_NED.z
 }
 function updateBodyVerticalUpPosition(){
 		//get elements
@@ -697,7 +708,7 @@ function updateBodyVerticalUpPosition(){
 		//copy the value over
 		myOutput.value = myRange.value*1.;
     xyz_body_ref_FSD_old = new THREE.Vector3( 0, 0, 0 );
-    xyz_body_ref_FSD_old=xyz_body_ref_FSD_old
+    xyz_body_ref_FSD_old=xyz_body_ref_FSD.clone()
     xyz_body_ref_FSD.z = -myOutput.value;
     xyz_foil_body_FSD = xyz_foil_ref_FSD.clone().sub(xyz_body_ref_FSD);
     xyz_elev_body_FSD = xyz_elev_ref_FSD.clone().sub(xyz_body_ref_FSD);
@@ -708,7 +719,11 @@ function updateBodyVerticalUpPosition(){
     var rpy = new THREE.Euler( 0, -pitch, 0, 'XYZ' );
     CTM.makeRotationFromEuler(rpy);
     invCTM.getInverse(CTM);
-    xyz_body_grnd_NED.add(xyz_body_ref_FSD.clone().sub(xyz_body_ref_FSD_old).applyMatrix4(invCTM))
+    xyz_body_grnd_NED.add((xyz_body_ref_FSD.clone().sub(xyz_body_ref_FSD_old)).applyMatrix4(invCTM))
+	var myRange = document.getElementById("heaveRange");
+	var myOutput = document.getElementById("heave");
+	myRange.value = -xyz_body_grnd_NED.z
+	myOutput.value = -xyz_body_grnd_NED.z
     
 }
 function updateOutput(){
