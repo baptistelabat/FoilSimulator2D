@@ -86,6 +86,14 @@
 				value = "1.5"
 				step = "0.25" />
 			<output id = "foilRake">1</output>°
+		Foil Rake Delay
+			<input id = "foilRakeDelayRange"
+				type = "range"
+				min = "0"
+				max = "2"
+				value = "0.5"
+				step = "0.1" />
+			<output id = "foilRakeDelay">0.5</output>s
     </fieldset>
       <fieldset>
       Flight speed
@@ -113,7 +121,7 @@
 				min = "0"
 				max = "15"
 				value = "6"
-				step = "0.01" />
+				step = "0.1" />
 			<output id = "CGLongi">2</output>m
       Vertical coordinates
 			<input id = "CGVertUpRange"
@@ -121,7 +129,7 @@
 				min = "-10"
 				max = "10"
 				value = "3"
-				step = "0.01" />
+				step = "0.1" />
 			<output id = "CGVertUp">2</output>m
         Gravity? <input type="checkbox" id="gravityCheck" checked =true>
      </fieldset>

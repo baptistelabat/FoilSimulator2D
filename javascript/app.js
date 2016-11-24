@@ -64,6 +64,7 @@ isPitchDyanmic = true;
 isBuoyancy = true;
 isSurfaceEffect=true;
 isSurface = true;
+foilRakeDelay=0;
 
 // Plot parameter
 meter2pix = 50;
@@ -164,6 +165,7 @@ document.getElementById("surfaceEffectCheck")       .addEventListener("change", 
 document.getElementById("buoyancyCheck")            .addEventListener("change", updateBuoyancy);
 document.getElementById("elevatorRakeRange")        .addEventListener("change", updateElevatorRake);
 document.getElementById("foilRakeRange")            .addEventListener("change", updateFoilRake);
+document.getElementById("foilRakeDelayRange")       .addEventListener("change", updateFoilRakeDelay);
 document.getElementById("flightSpeedRange")         .addEventListener("change", updateFlightSpeed);
 document.getElementById("massRange")                .addEventListener("change", updateMass);
 document.getElementById("CGLongiRange")             .addEventListener("change", updateLongitudinalCenterOfInertiaPosition);
@@ -184,10 +186,26 @@ document.getElementById("fluidSelect")              .addEventListener("change", 
 
 setInterval(updaten, 1);
 setInterval(updatePlot,100);
+setInterval(saveRake,100);
 var d = new Date();
 var t0 = d.getTime();
 told = 0;
 simulation_time = 0;
+
+//create and fill a circular buffar to store foil rake a be able to apply pure delay
+var rake=[]
+i_rakeBuffer=0
+function saveRake(){
+	i_rakeBuffer = i_rakeBuffer+1
+	if (i_rakeBuffer>20) {i_rakeBuffer = 0;}
+	rake[i_rakeBuffer]= foilRake;
+}
+function getRakeDelayed(delay)
+{
+	i_delay = i_rakeBuffer-Math.round(delay/0.1)
+	if (i_delay<0){i_delay = i_delay+20}
+	return rake[i_delay]
+}
 
 function init(){
   // Do init to be sure values are the same as described in html page
@@ -200,6 +218,7 @@ function init(){
   updateBuoyancy();
   updateElevatorRake();
   updateFoilRake();
+  updateFoilRakeDelay();
   updateFlightSpeed();
   updateMass();
   updateLongitudinalCenterOfInertiaPosition();
@@ -275,7 +294,7 @@ function computeForces(){
   uvw_fluid_foil_NED =  uvw_fluid_grnd_NED.clone().sub(uvw_foil_grnd_NED);
   angle_fluid_body = Math.atan2(-uvw_fluid_foil_NED.z, -uvw_fluid_foil_NED.x);
   q = 1/2*density *Math.pow(uvw_fluid_foil_NED.length(),2);
-  AoA = pitch + foilRake + angle_fluid_body
+  AoA = pitch + getRakeDelayed(foilRakeDelay) + angle_fluid_body
     xyz_foil_grnd_NED = xyz_foil_body_FSD.clone().applyMatrix4(invCTM).add(xyz_body_grnd_NED)
   chord = Math.sqrt(foilArea/foilAspectRatio);
   inverseMirrorEffect = (1-Math.exp(Math.min(0,-xyz_foil_grnd_NED.z)/chord));
@@ -550,6 +569,14 @@ function updateFoilRake(){
 		//copy the value over
 		myOutput.value = myRange.value;
     foilRake  = myRange.value*Math.PI/180;
+}
+function updateFoilRakeDelay(){
+		//get elements
+		var myRange = document.getElementById("foilRakeDelayRange");
+		var myOutput = document.getElementById("foilRakeDelay");
+		//copy the value over
+		myOutput.value = myRange.value;
+		foilRakeDelay  = myRange.value*1;
 }
 
 
