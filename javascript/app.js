@@ -186,6 +186,41 @@ document.getElementById("foilVertUpRange")          .addEventListener("change", 
 //document.getElementById("bodyVertUpRange")          .addEventListener("change", updateBodyVerticalUpPosition);
 document.getElementById("fluidSelect")              .addEventListener("change", updateFluid);
 
+document.addEventListener("wheel", function(ev){
+	foilRake= foilRake-ev.deltaY/Math.abs(ev.deltaY)*foilRakeStep
+	var myRange = document.getElementById("foilRakeRange");
+	var myOutput = document.getElementById("foilRake");
+	//copy the value over
+	myOutput.value = Math.round(foilRake*180/Math.PI*100)/100;
+	myRange.value=Math.round(foilRake*180/Math.PI*100)/100;
+});
+//To prevent scolling the page
+window.onwheel = function(){ return false; }
+
+document.addEventListener("keydown", function (event) {
+  if (event.defaultPrevented) {
+    return; // Should do nothing if the key event was already consumed.
+  }
+  switch (event.key) {
+    case "ArrowUp":
+      foilRake=foilRake+foilRakeStep;
+      break;
+    case "ArrowDown":
+      foilRake=foilRake-foilRakeStep;
+      break;
+    default:
+      return; // Quit when this doesn't handle the key event.
+  }
+	var myRange = document.getElementById("foilRakeRange");
+	var myOutput = document.getElementById("foilRake");
+	//copy the value over
+	myOutput.value = Math.round(foilRake*180/Math.PI*100)/100;
+	myRange.value=Math.round(foilRake*180/Math.PI*100)/100;
+
+  // Consume the event for suppressing "double action".
+  event.preventDefault();
+}, true);
+
 setInterval(updaten, 1);
 setInterval(updatePlot,100);
 setInterval(saveRake,100);
