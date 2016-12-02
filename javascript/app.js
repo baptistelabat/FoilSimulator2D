@@ -65,7 +65,8 @@ isBuoyancy = true;
 isSurfaceEffect=true;
 isSurface = true;
 foilRakeDelay=0;
-foilRakeStep = 0.2
+foilRakeStep = 0.2*Math.PI/180.
+elevatorRakeStep = 0.1*Math.PI/180.
 
 // Plot parameter
 meter2pix = 50;
@@ -208,6 +209,12 @@ document.addEventListener("keydown", function (event) {
     case "ArrowDown":
       foilRake=foilRake-foilRakeStep;
       break;
+	case "ArrowRight":
+      elevatorRake=elevatorRake+elevatorRakeStep;
+      break;
+	case "ArrowLeft":
+      elevatorRake=elevatorRake-elevatorRakeStep;
+      break;
     default:
       return; // Quit when this doesn't handle the key event.
   }
@@ -215,7 +222,13 @@ document.addEventListener("keydown", function (event) {
 	var myOutput = document.getElementById("foilRake");
 	//copy the value over
 	myOutput.value = Math.round(foilRake*180/Math.PI*100)/100;
-	myRange.value=Math.round(foilRake*180/Math.PI*100)/100;
+	myRange.value=myOutput.value;
+	
+	var myRange = document.getElementById("elevatorRakeRange");
+	var myOutput = document.getElementById("elevatorRake");
+	//copy the value over
+	myOutput.value = Math.round(elevatorRake*180/Math.PI*100)/100;
+	myRange.value=myOutput.value;
 
   // Consume the event for suppressing "double action".
   event.preventDefault();
@@ -597,11 +610,11 @@ function updateBuoyancy(){
     isBuoyancy = myCheck.checked;
 }
 function updateElevatorRake(){
-		//get elements
-		var myRange = document.getElementById("elevatorRakeRange");
-		var myOutput = document.getElementById("elevatorRake");
-		//copy the value over
-		myOutput.value = myRange.value;
+	//get elements
+	var myRange = document.getElementById("elevatorRakeRange");
+	var myOutput = document.getElementById("elevatorRake");
+	//copy the value over
+	myOutput.value = myRange.value;
     elevatorRake  = myRange.value*Math.PI/180;
 }
 function updateFoilRake(){
