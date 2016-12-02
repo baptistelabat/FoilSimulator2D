@@ -8,7 +8,7 @@
 #define ELEV_RAKE_PLUS_PIN 2 
 #define ELEV_RAKE_MINUS_PIN 3
 volatile unsigned long last_micros;
-int debouncing_time=10;
+int debouncing_time=30;
 int delay_read = 0;
 
 #include "Keyboard.h"
@@ -47,12 +47,8 @@ void debounceIncreaseFoilRake()
 }
 void increaseFoilRake()
 {
-  delay(delay_read);
-  if (digitalRead(FOIL_RAKE_PLUS_PIN)==LOW)
-  {
     //Serial.println("KEY_UP_ARROW");
     Keyboard.write(KEY_UP_ARROW);
-  }
 }
 void debounceDecreaseFoilRake()
 {
@@ -63,12 +59,8 @@ void debounceDecreaseFoilRake()
 }
 void decreaseFoilRake()
 {
-    delay(delay_read);
-  if (digitalRead(FOIL_RAKE_MINUS_PIN)==LOW)
-  {
     //Serial.println("KEY_DOWN_ARROW");
     Keyboard.write(KEY_DOWN_ARROW);
-  }
 }
 void debounceIncreaseElevatorRake()
 {
@@ -79,12 +71,8 @@ void debounceIncreaseElevatorRake()
 }
 void increaseElevatorRake()
 {
-  delay(delay_read);
-  if (digitalRead(ELEV_RAKE_PLUS_PIN)==LOW)
-  {
     //Serial.println("KEY_RIGHT_ARROW");
     Keyboard.write(KEY_RIGHT_ARROW);
-  }
 }
 void debounceDecreaseElevatorRake()
 {
@@ -95,12 +83,8 @@ void debounceDecreaseElevatorRake()
 }
 void decreaseElevatorRake()
 {
-  delay(delay_read);
-  if (digitalRead(ELEV_RAKE_MINUS_PIN)==LOW)
-  {
     //Serial.println("KEY_LEFT_ARROW");
     Keyboard.write(KEY_LEFT_ARROW);
-  }
 }
 
 
