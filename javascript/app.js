@@ -943,12 +943,13 @@ function computeBuoyancy()
 }
 
 // Deals with 3D view
-//var w2 = window.open("https://rawgit.com/baptistelabat/visu3D/master/visu3D.html")
+var w2 = window.open("https://rawgit.com/baptistelabat/visu3D/master/visu3D.html")
 //var w2 = window.open("C:/Users/labat/perso/visu3D/visu3D.html")
 
 function localStore()
 {
 	localStorage.setItem('z', xyz_body_grnd_NED.z);
+	localStorage.setItem('pitch', pitch);
 	localStorage.setItem('t', simulation_time);
 }
   
