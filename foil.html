@@ -5,7 +5,8 @@
 </head>
 <body>
   <p>Foil simulator <a href="https://github.com/baptistelabat/FoilSimulator2D">(source code)</a><br>
-  <output id = "time">0</output>s   
+  <output id = "time">0</output>s
+  <output id = "instantFlightSpeed">0</output>kt   
  Rake mean power <output id = "rakeMeanPower">0</output>W<br>
     </p>
     <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" width="2000" height="500">
@@ -83,7 +84,7 @@
 				type = "range"
 				min = "-3"
 				max = "9"
-				value = "1.5"
+				value = "3.7"
 				step = "0.25" />
 			<output id = "foilRake">1</output>°
 		Foil Rake Delay
@@ -104,14 +105,23 @@
 			<output id = "foilRakeStep">0.2</output>°
 		</fieldset>
       <fieldset>
-      Flight speed
+      Average flight speed
 			<input id = "flightSpeedRange"
 				type = "range"
 				min = "0"
 				max = "45"
 				value = "30"
 				step = "1" />
-			<output id = "flightSpeed">25</output>kt
+
+			<output id = "flightSpeed">25</output>
+			Speed variation
+						<input id = "flightSpeedVariationRange"
+				type = "range"
+				min = "0"
+				max = "5"
+				value = "0.5"
+				step = "0.1" />
+			<output id = "flightSpeedVariation">0.5</output>kt
     </fieldset>
 
     <fieldset>

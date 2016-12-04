@@ -77,6 +77,7 @@ var V = 10;
 pqr0          = 0;    // Angular rate
 pitch=2.2*Math.PI/180;
 rakeMeanPower = 0
+flightSpeedVariation = 0;
 
 // NED (North, East, Down) convention is used
 // x is positive forward
@@ -170,6 +171,7 @@ document.getElementById("foilRakeRange")            .addEventListener("change", 
 document.getElementById("foilRakeDelayRange")       .addEventListener("change", updateFoilRakeDelay);
 document.getElementById("foilRakeStepRange")        .addEventListener("change", updateFoilRakeStep);
 document.getElementById("flightSpeedRange")         .addEventListener("change", updateFlightSpeed);
+document.getElementById("flightSpeedVariationRange").addEventListener("change", updateFlightSpeedVariation);
 document.getElementById("massRange")                .addEventListener("change", updateMass);
 document.getElementById("CGLongiRange")             .addEventListener("change", updateLongitudinalCenterOfInertiaPosition);
 document.getElementById("CGVertUpRange")            .addEventListener("change", updateVerticalUpCenterOfInertiaPosition);
@@ -271,6 +273,7 @@ function init(){
   updateFoilRakeDelay();
   updateFoilRakeStep();
   updateFlightSpeed();
+  updateFlightSpeedVariation();
   updateMass();
   updateLongitudinalCenterOfInertiaPosition();
   updateVerticalUpCenterOfInertiaPosition();
@@ -307,6 +310,9 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
   translateCenterOfInertia(xyz_CoG_ref_FSD.x, xyz_CoG_ref_FSD.z);
   rotateFoil(foil_rake);
   rotateElevator(elevator_rake); 
+  
+  // For 3D view in other tab
+  localStore()
 }
 function updatePlot(){
   plot(xyz_body_grnd_NED,xyz_foil_body_FSD, xyz_elev_body_FSD, foilRake, elevatorRake, pitch);
@@ -453,7 +459,7 @@ function update(){
   {
     uvw_body_grnd_NED.z = 0
   }
-  uvw_body_grnd_NED.x = V
+  uvw_body_grnd_NED.x = V + flightSpeedVariation*Math.sin(2*Math.PI/30.*simulation_time)
   //console.log(uvw_body_grnd_NED)
   x_old = xyz_body_grnd_NED.x
   xyz_body_grnd_NED.add(uvw_body_grnd_NED.clone().multiplyScalar(dt))
@@ -654,6 +660,14 @@ function updateFlightSpeed(){
 		myOutput.value = myRange.value;
     V = 1*myOutput.value*1852/3600;
 }
+function updateFlightSpeedVariation(){
+		//get elements
+		var myRange = document.getElementById("flightSpeedVariationRange");
+		var myOutput = document.getElementById("flightSpeedVariation");
+		//copy the value over
+		myOutput.value = myRange.value;
+		flightSpeedVariation= 1*myOutput.value*1852/3600;
+}
 function updateMass(){
 		//get elements
 		var myRange = document.getElementById("massRange");
@@ -822,6 +836,9 @@ function updateOutput(){
     
     myOutput = document.getElementById("time");
     myOutput.value = Math.round(simulation_time*100)/100;
+	
+	myOutput = document.getElementById("instantFlightSpeed");
+    myOutput.value = Math.round(uvw_body_grnd_NED.x*3600/1852*10)/10;
 
     myOutput = document.getElementById("rakeMeanPower");
     myOutput.value = Math.round(rakeMeanPower*10)/10;
@@ -925,5 +942,14 @@ function computeBuoyancy()
   KMN_buoyancy_body_FSD = tmp.clone().crossVectors(xyz_buoyancy_body_FSD, XYZ_buoyancy_body_FSD);
 }
 
+// Deals with 3D view
+//var w2 = window.open("https://rawgit.com/baptistelabat/visu3D/master/visu3D.html")
+//var w2 = window.open("C:/Users/labat/perso/visu3D/visu3D.html")
+
+function localStore()
+{
+	localStorage.setItem('z', xyz_body_grnd_NED.z);
+	localStorage.setItem('t', simulation_time);
+}
   
   
