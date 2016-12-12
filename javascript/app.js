@@ -301,7 +301,7 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
   plotFfoil();
   plotFelevator();
   plotFall();
-  translateBody(xyz_body_grnd_NED.x, xyz_body_grnd_NED.z);
+  translateBody(xyz_body_grnd_NED.x*0, xyz_body_grnd_NED.z);
   rotateBody(pitch);
   translateRef(-xyz_body_ref_FSD.x, -xyz_body_ref_FSD.z);
   translateBuoyancy(xyz_buoyancy_ref_FSD.x, xyz_buoyancy_ref_FSD.z)
@@ -461,9 +461,7 @@ function update(){
   }
   uvw_body_grnd_NED.x = V + flightSpeedVariation*Math.sin(2*Math.PI/30.*simulation_time)
   //console.log(uvw_body_grnd_NED)
-  x_old = xyz_body_grnd_NED.x
   xyz_body_grnd_NED.add(uvw_body_grnd_NED.clone().multiplyScalar(dt))
-  xyz_body_grnd_NED.x = x_old
   
   pqr_body_grnd_FSD.add(KMN_all_body_FSD.clone().multiplyScalar(1/pitchInertia*dt));
   if (false==isPitchDynamic)
@@ -948,6 +946,8 @@ var w2 = window.open("https://rawgit.com/baptistelabat/visu3D/master/visu3D.html
 
 function localStore()
 {
+	localStorage.setItem('x', xyz_body_grnd_NED.x);
+	localStorage.setItem('y', xyz_body_grnd_NED.y);
 	localStorage.setItem('z', xyz_body_grnd_NED.z);
 	localStorage.setItem('pitch', pitch);
 	localStorage.setItem('t', simulation_time);
