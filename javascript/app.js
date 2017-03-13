@@ -880,58 +880,22 @@ function computeBuoyancy()
   xyz_hAT_grnd_NED = xyz_hAT_ref_FSD.clone().applyMatrix4(invCTM).add(xyz_ref_grnd_NED)
   xyz_hFT_grnd_NED = xyz_hFT_ref_FSD.clone().applyMatrix4(invCTM).add(xyz_ref_grnd_NED)
   
-  // deals only with most likely case
-  if ((xyz_hAB_grnd_NED.z<=0)&(xyz_hFB_grnd_NED.z<=0))
-  { // the hull is fully out of water
-    volume = 0
-    if (xyz_hAB_grnd_NED.z<xyz_hFB_grnd_NED.z)
-    {
-      // Take the most down point to ensure continuity
-      xyz_buoyancy_grnd_NED = xyz_hFB_grnd_NED.clone()
-    }
-    else{
-      if (xyz_hAB_grnd_NED.z==xyz_hFB_grnd_NED.z)
-      {
-        //Take the mean
-        xyz_buoyancy_grnd_NED = xyz_hAB_grnd_NED.clone().add(xyz_hFB_grnd_NED).multiplyScalar(1/2.)
-      }
-      else{
-        xyz_buoyancy_grnd_NED = xyz_hAB_grnd_NED.clone()
-      }
-    }
+  var hullPolygon = CSG.fromPolygons([[[xyz_hAB_grnd_NED.x, xyz_hAB_grnd_NED.z],[xyz_hAT_grnd_NED.x, xyz_hAT_grnd_NED.z], [xyz_hFT_grnd_NED.x, xyz_hFT_grnd_NED.z], [xyz_hFB_grnd_NED.x, xyz_hFB_grnd_NED.z]]])
+  var waterPolygon = CSG.fromPolygons([[[-1e20, 0],[1e20, 0], [1e20, 1000], [-1e20, 1000]]]);
+  var immersedHullPolygons = hullPolygon.intersect(waterPolygon).toPolygons();
+  if (immersedHullPolygons.length>0)
+  {
+		volume = polyarea(immersedHullPolygons[0])
+		centroid = polycentroid(immersedHullPolygons[0])
   }
   else
-  {
-    if ((xyz_hAB_grnd_NED.z>=0)&(xyz_hFB_grnd_NED.z<=0))
-    { // Only bottom aft corner is in the water
-      
-      // use Thales to compute intersection points
-      tmp1 = xyz_hAB_grnd_NED.clone().add(xyz_hAT_grnd_NED.clone().sub(xyz_hAB_grnd_NED).multiplyScalar(xyz_hAB_grnd_NED.z/(xyz_hAB_grnd_NED.z-xyz_hAT_grnd_NED.z)));
-      tmp2 = xyz_hAB_grnd_NED.clone().add(xyz_hFB_grnd_NED.clone().sub(xyz_hAB_grnd_NED).multiplyScalar(xyz_hAB_grnd_NED.z/(xyz_hAB_grnd_NED.z-xyz_hFB_grnd_NED.z)));
-      xyz_buoyancy_grnd_NED = computeBarycenter3(tmp1,tmp2,xyz_hAB_grnd_NED);
-      volume = tmp.crossVectors(tmp1.sub(xyz_hAB_grnd_NED), tmp2.sub(xyz_hAB_grnd_NED)).length()/2;
-      
-    }
-    if ((xyz_hFB_grnd_NED.z>=0)&(xyz_hAB_grnd_NED.z<=0))
-    { // Only bottom fore corner is in the water
-      
-      // use Thales to compute intersection points
-      tmp1 = xyz_hFB_grnd_NED.clone().add(xyz_hFT_grnd_NED.clone().sub(xyz_hFB_grnd_NED).multiplyScalar(xyz_hFB_grnd_NED.z/(xyz_hFB_grnd_NED.z-xyz_hFT_grnd_NED.z)));
-      tmp2 = xyz_hFB_grnd_NED.clone().add(xyz_hAB_grnd_NED.clone().sub(xyz_hFB_grnd_NED).multiplyScalar(xyz_hFB_grnd_NED.z/(xyz_hFB_grnd_NED.z-xyz_hAB_grnd_NED.z)));
-      xyz_buoyancy_grnd_NED = computeBarycenter3(tmp1,tmp2,xyz_hFB_grnd_NED);
-      volume = tmp.crossVectors(tmp1.sub(xyz_hFB_grnd_NED), tmp2.sub(xyz_hFB_grnd_NED)).length()/2;
-      
-    }
-    if ((xyz_hFB_grnd_NED.z>=0)&(xyz_hAB_grnd_NED.z>=0))
-    { // Two bottom points in the water
-      tmp1 = xyz_hAB_grnd_NED.clone().add(xyz_hAT_grnd_NED.clone().sub(xyz_hAB_grnd_NED).multiplyScalar(xyz_hAB_grnd_NED.z/(xyz_hAB_grnd_NED.z-xyz_hAT_grnd_NED.z)));
-      tmp2 = xyz_hFB_grnd_NED.clone().add(xyz_hFT_grnd_NED.clone().sub(xyz_hFB_grnd_NED).multiplyScalar(xyz_hFB_grnd_NED.z/(xyz_hFB_grnd_NED.z-xyz_hFT_grnd_NED.z)));
-      volume1 = tmp.crossVectors(tmp1.clone().sub(xyz_hAB_grnd_NED), xyz_hFB_grnd_NED.clone().sub(xyz_hAB_grnd_NED)).length()/2;
-      volume2 = tmp.crossVectors(tmp1.clone().sub(xyz_hFB_grnd_NED), tmp2.clone().sub(xyz_hFB_grnd_NED)).length()/2;
-      xyz_buoyancy_grnd_NED = computeBarycenter3(tmp1,xyz_hFB_grnd_NED,xyz_hAB_grnd_NED).multiplyScalar(volume1).add(computeBarycenter3(tmp1,tmp2,xyz_hFB_grnd_NED).multiplyScalar(volume2)).multiplyScalar(1/(volume1+volume2));
-      volume = volume1+volume2;
-    }
+  { 
+    volume = 0
+    centroid ={x:0,y:0}
   }
+  
+  xyz_buoyancy_grnd_NED.x = centroid.x
+  xyz_buoyancy_grnd_NED.z = centroid.y
   force = mass*g*volume/(Lpp*initialDraft)*isBuoyancy;
   XYZ_buoyancy_body_NED.z = -force;
   XYZ_buoyancy_body_FSD = XYZ_buoyancy_body_NED.clone().applyMatrix4(CTM);
@@ -941,7 +905,7 @@ function computeBuoyancy()
 }
 
 // Deals with 3D view
-var w2 = window.open("https://rawgit.com/baptistelabat/visu3D/master/visu3D.html")
+//var w2 = window.open("https://rawgit.com/baptistelabat/visu3D/master/visu3D.html")
 //var w2 = window.open("C:/Users/labat/perso/visu3D/visu3D.html")
 
 function localStore()
@@ -953,4 +917,31 @@ function localStore()
 	localStorage.setItem('t', simulation_time);
 }
   
-  
+function polyarea(vertices) {
+	// Computes the area of a polygon
+	// http://stackoverflow.com/questions/16285134/calculating-polygon-area
+    var area = 0;
+	j = vertices.length-1
+    for (var i = 0, l = vertices.length; i < l; i++) {
+			area = area +  (vertices[j].x+vertices[i].x) * (vertices[i].y-vertices[j].y)
+			j=i;
+    }
+
+    return area/2;
+}
+function polycentroid(vertices) {
+	// Computes the centroid of a polygon
+	// https://en.wikipedia.org/wiki/Centroid
+	
+	area = polyarea(vertices)
+	var totalx = 0
+	var totaly = 0
+	j = vertices.length-1
+	for (var i = 0, l = vertices.length; i < l; i++) {
+		totalx = totalx +  (vertices[j].x+vertices[i].x) * (vertices[j].x*vertices[i].y-vertices[i].x*vertices[j].y)
+		totaly = totaly +  (vertices[j].y+vertices[i].y) * (vertices[j].x*vertices[i].y-vertices[i].x*vertices[j].y)	
+		j=i;
+    }
+	centroid= {x:1/(6*area)*totalx, y:1/(6*area)*totaly}
+	return centroid
+}
