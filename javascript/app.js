@@ -387,7 +387,7 @@ function computeForces(){
   
   CTMf.makeRotationY(angle_fluid_body);
   XYZ_foil_body_NED.set(  -drag,0, -lift);
-  XYZ_foil_body_NED.applyMatrix4(invCTM);
+  XYZ_foil_body_NED.applyMatrix4(CTMf);
   
   // Compute torque
   XYZ_foil_body_FSD = XYZ_foil_body_NED.clone().applyMatrix4(CTM)
@@ -433,7 +433,7 @@ function computeForces(){
   
   CTMf.makeRotationY(angle_fluid_body);
   XYZ_elev_body_NED.set(  -drag,0, -lift);
-  XYZ_elev_body_NED.applyMatrix4(invCTM);
+  XYZ_elev_body_NED.applyMatrix4(CTMf);
   
   // Compute torque
   rpy = new THREE.Euler( 0, -pitch, 0, 'XYZ' );
