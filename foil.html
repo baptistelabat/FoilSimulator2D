@@ -62,7 +62,7 @@
 				type = "range"
 				min = "-10"
 				max = "10"
-				value = "2.2"
+				value = "0.6"
 				step = "0.1" />
 			<output id = "pitch">2</output>°
         Is dynamic? <input type="checkbox" id="pitchDynamicCheck" checked =false>
@@ -74,6 +74,14 @@
 				value = "0"
 				step = "0.01" />
 			<output id = "pitchRate">0</output>°/s
+        Foil pitch stiffness
+			<input id = "pitchStiffnessRange"
+				type = "range"
+				min = "0.0"
+				max = "2"
+				value = "0.0"
+				step = "0.1" />
+			<output id = "pitchStiffness">2</output>°/m
      </fieldset>
      <fieldset>
       Height
@@ -81,7 +89,7 @@
 				type = "range"
 				min = "-10"
 				max = "10"
-				value = "1.6"
+				value = "4"
 				step = "0.01" />
 			<output id = "heave">2</output>m
         Is dynamic? <input type="checkbox" id="heaveDynamicCheck" checked =false>
@@ -92,6 +100,16 @@
 				value = "0"
 				step = "0.01" />
 			<output id = "heaveRate">0</output>m
+        Foil heave stiffness
+			<input id = "heaveStiffnessRange"
+				type = "range"
+				min = "0.0"
+				max = "10"
+				value = "2"
+				step = "0.1" />
+			<output id = "heaveStiffness">2</output>°/m
+        </fieldset>
+		<fieldset>
         Is surface? <input type="checkbox" id="surfaceCheck" checked =true>
         Is surface effect? <input type="checkbox" id="surfaceEffectCheck" checked =true>
         Is buoyancy? <input type="checkbox" id="buoyancyCheck" checked =true>
@@ -110,7 +128,7 @@
 				type = "range"
 				min = "-3"
 				max = "9"
-				value = "3.6"
+				value = "3.8"
 				step = "0.25" />
 			<output id = "foilRake">1</output>°
 		Foil Rake Delay
@@ -126,7 +144,7 @@
 				type = "range"
 				min = "0.0"
 				max = "1"
-				value = "0.05"
+				value = "0.2"
 				step = "0.05" />
 			<output id = "foilRakeStep">0.2</output>°
 		</fieldset>

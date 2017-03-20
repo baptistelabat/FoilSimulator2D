@@ -63,6 +63,9 @@ var mass                = 3000,
 
     isFoilStall         = false,
     isElevStall         = false;
+    
+    heaveStiffness      = 0;
+    pitchStiffness      = 0;
 
 // Simulation parameter
 var sampleTime          = 0.0005, // Sample time
@@ -175,12 +178,16 @@ document.getElementById("pitchDynamicCheck")        .
     addEventListener("change", updatePitchDynamic);
 document.getElementById("pitchRateRange")               .
     addEventListener("change", updatePitchRate);
+document.getElementById("pitchStiffnessRange")               .
+    addEventListener("change", updatePitchStiffness);
 document.getElementById("heaveRange")               .
     addEventListener("change", updateHeave);
 document.getElementById("heaveDynamicCheck")        .
     addEventListener("change", updateHeaveDynamic);
 document.getElementById("heaveRateRange")               .
     addEventListener("change", updateHeaveRate);
+document.getElementById("heaveStiffnessRange")               .
+    addEventListener("change", updateHeaveStiffness);
 document.getElementById("surfaceCheck")             .
     addEventListener("change", updateSurface);
 document.getElementById("surfaceEffectCheck")       .
@@ -310,9 +317,11 @@ function init() {
     updatePitch();
     updatePitchDynamic();
     updatePitchRate();
+    updatePitchStiffness();
     updateHeave();
     updateHeaveDynamic();
     updateHeaveRate();
+    updateHeaveStiffness();
     updateSurface();
     updateSurfaceEffect();
     updateBuoyancy();
@@ -499,9 +508,11 @@ function computeForces() {
     uvw_foil_grnd_NED = uvw_body_grnd_NED.clone().add(
         tmp.crossVectors(pqr_body_grnd_FSD, xyz_foil_body_FSD).
             applyMatrix4(invCTM));
-    AoK = getRakeDelayed(foilRakeDelay);
+    
     xyz_foil_grnd_NED = xyz_foil_body_FSD.clone().
-        applyMatrix4(invCTM).add(xyz_body_grnd_NED);
+    	applyMatrix4(invCTM).add(xyz_body_grnd_NED);
+    AoK = getRakeDelayed(foilRakeDelay) + heaveStiffness *(xyz_foil_grnd_NED.z-z_waterSurface) - pitchStiffness * pitch;
+    
     chord = Math.sqrt(foilArea / foilAspectRatio);
     
     res = computeForcesOnLiftingSurface(CTM, pitch, uvw_fluid_grnd_NED,
@@ -701,6 +712,14 @@ function updatePitchRate() {
     //copy the value over
         myOutput.value = myRange.value;
 }
+function updatePitchStiffness() {
+    //get elements
+    var myRange = document.getElementById("pitchStiffnessRange");
+    var myOutput = document.getElementById("pitchStiffness");
+    //copy the value over
+    myOutput.value = myRange.value;
+    pitchStiffness  = myRange.value; // rad/rad
+}
 function updateHeave() {
     //get elements
     var myRange = document.getElementById("heaveRange");
@@ -737,6 +756,14 @@ function updateHeaveRate() {
     }
     //copy the value over
     myOutput.value = myRange.value;
+}
+function updateHeaveStiffness() {
+    //get elements
+    var myRange = document.getElementById("heaveStiffnessRange");
+    var myOutput = document.getElementById("heaveStiffness");
+    //copy the value over
+    myOutput.value = myRange.value;
+    heaveStiffness  = myRange.value * Math.PI / 180; //rad/m
 }
 function updateSurface() {
         //get elements
