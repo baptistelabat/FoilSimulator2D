@@ -56,6 +56,8 @@ var mass                = 3000,
     elevatorArea        = 0.19 * 2,
     foilAspectRatio     = 5,
     elevatorAspectRatio = 5,
+    stallAngle          = 0,
+    stallRecoveryAngle  = 0,
     initialDraft        = 0.25,
     Lpp                 = 13,
 
@@ -215,6 +217,10 @@ document.getElementById("elevatorAspectRatioRange") .
     addEventListener("change", updateElevatorAspectRatio);
 document.getElementById("foilAspectRatioRange")     .
     addEventListener("change", updateFoilAspectRatio);
+document.getElementById("stallAngleRange") .
+    addEventListener("change", updateStallAngle);
+document.getElementById("stallRecoveryAngleRange")     .
+    addEventListener("change", updateStallRecoveryAngle);
 document.getElementById("elevatorLongiRange")       .
     addEventListener("change", updateElevatorLongitudinalPosition);
 document.getElementById("foilLongiRange")           .
@@ -325,6 +331,8 @@ function init() {
     updateFoilArea();
     updateElevatorAspectRatio();
     updateFoilAspectRatio();
+    updateStallAngle();
+    updateStallRecoveryAngle();
     updateElevatorLongitudinalPosition();
     updateFoilLongitudinalPosition();
     updateElevatorVerticalUpPosition();
@@ -373,8 +381,10 @@ function computeForcesOnLiftingSurface(CTM, pitch, uvw_fluid_grnd_NED,
     uvw_surf_grnd_NED, xyz_surf_grnd_NED, xyz_surf_body_FSD, AoK, density, chord, z_waterSurface,
     isSurfaceEffect, isSurface, isSurfStall, surfArea, surfAspectRatio) {
         
-    var angle_uvw_surface_fluid_NED, q, AoA, chord, inverseMirrorEffect,
-        dragSurfaceEffect, stallEffect;
+    var angle_uvw_surface_fluid_NED, q, AoA, chord,
+        inverseMirrorEffect=1,
+        dragSurfaceEffect=1,
+        stallEffect=1;
     var tmp    = new THREE.Vector3( 0, 0, 0 ),
         uvw_fluid_surf_NED = new THREE.Vector3( 0, 0, 0 );
     var CTMf   = new THREE.Matrix4;
@@ -422,10 +432,10 @@ function computeForcesOnLiftingSurface(CTM, pitch, uvw_fluid_grnd_NED,
     }
     
     // Add stall effect
-    if (Math.abs(AoA)>10 * Math.PI / 180) {
+    if (Math.abs(AoA)>stallAngle) {
         isSurfStall = true;
     }
-    if (Math.abs(AoA)<5 * Math.PI / 180) { 
+    if (Math.abs(AoA)<stallRecoveryAngle) { 
         isSurfStall = false;
     }
     if (isSurfStall) {   
@@ -875,6 +885,22 @@ function updateFoilAspectRatio() {
     //copy the value over
     myOutput.value = myRange.value;
     foilAspectRatio = myOutput.value;
+}
+function updateStallAngle() {
+    //get elements
+    var myRange = document.getElementById("stallAngleRange");
+    var myOutput = document.getElementById("stallAngle");
+    //copy the value over
+    myOutput.value = myRange.value;
+    stallAngle = myOutput.value*Math.PI/180;
+}
+function updateStallRecoveryAngle() {
+    //get elements
+    var myRange = document.getElementById("stallRecoveryAngleRange");
+    var myOutput = document.getElementById("stallRecoveryAngle");
+    //copy the value over
+    myOutput.value = myRange.value;
+    stallRecoveryAngle = myOutput.value*Math.PI/180;
 }
 function updateElevatorLongitudinalPosition() {
     //get elements
