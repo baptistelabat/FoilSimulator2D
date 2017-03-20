@@ -66,6 +66,14 @@
 				step = "0.1" />
 			<output id = "pitch">2</output>°
         Is dynamic? <input type="checkbox" id="pitchDynamicCheck" checked =false>
+        Pitch rate
+        	<input id = "pitchRateRange"
+				type = "range"
+				min = "-30"
+				max = "30"
+				value = "0"
+				step = "0.01" />
+			<output id = "pitchRate">0</output>°/s
      </fieldset>
      <fieldset>
       Height
@@ -77,6 +85,13 @@
 				step = "0.01" />
 			<output id = "heave">2</output>m
         Is dynamic? <input type="checkbox" id="heaveDynamicCheck" checked =false>
+        	<input id = "heaveRateRange"
+				type = "range"
+				min = "-10"
+				max = "10"
+				value = "0"
+				step = "0.01" />
+			<output id = "heaveRate">0</output>m
         Is surface? <input type="checkbox" id="surfaceCheck" checked =true>
         Is surface effect? <input type="checkbox" id="surfaceEffectCheck" checked =true>
         Is buoyancy? <input type="checkbox" id="buoyancyCheck" checked =true>
@@ -95,7 +110,7 @@
 				type = "range"
 				min = "-3"
 				max = "9"
-				value = "3.7"
+				value = "3.6"
 				step = "0.25" />
 			<output id = "foilRake">1</output>°
 		Foil Rake Delay
@@ -103,7 +118,7 @@
 				type = "range"
 				min = "0"
 				max = "2"
-				value = "0.5"
+				value = "0.0"
 				step = "0.1" />
 			<output id = "foilRakeDelay">0.5</output>s
 			Foil Rake Step
@@ -111,7 +126,7 @@
 				type = "range"
 				min = "0.0"
 				max = "1"
-				value = "0.2"
+				value = "0.05"
 				step = "0.05" />
 			<output id = "foilRakeStep">0.2</output>°
 		</fieldset>
@@ -130,9 +145,9 @@
 				type = "range"
 				min = "0"
 				max = "5"
-				value = "0.5"
+				value = "0.0"
 				step = "0.1" />
-			<output id = "flightSpeedVariation">0.5</output>kt
+			<output id = "flightSpeedVariation">0.0</output>kt
     </fieldset>
 
     <fieldset>
@@ -212,7 +227,7 @@
           Elevator longitudinal coordinates
 			<input id = "elevatorLongiRange"
 				type = "range"
-				min = "0"
+				min = "-5"
 				max = "15"
 				value = "0"
 				step = "0.01" />

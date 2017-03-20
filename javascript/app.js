@@ -80,7 +80,7 @@ var meter2pix           = 50,
 
 // Initial condition
 var V                    = 10,
-    pqr0                 = 0,    // Angular rate
+    q0                   = 0,    // Angular rate
     pitch                = 2.2 * Math.PI / 180,
     rakeMeanPower        = 0,
     flightSpeedVariation = 0;
@@ -163,7 +163,7 @@ var KMN_foil_body_FSD     = new THREE.Vector3( 0, 0, 0 ),
 var elevatorRake  = 0,
     foilRake      = 0;
     
-pqr_body_grnd_FSD.x = pqr0;
+pqr_body_grnd_FSD.y = q0;
 
 document.getElementById("targetHeightRange")        .
     addEventListener("change", updateTargetHeight);
@@ -171,10 +171,14 @@ document.getElementById("pitchRange")               .
     addEventListener("change", updatePitch);
 document.getElementById("pitchDynamicCheck")        .
     addEventListener("change", updatePitchDynamic);
+document.getElementById("pitchRateRange")               .
+    addEventListener("change", updatePitchRate);
 document.getElementById("heaveRange")               .
     addEventListener("change", updateHeave);
 document.getElementById("heaveDynamicCheck")        .
     addEventListener("change", updateHeaveDynamic);
+document.getElementById("heaveRateRange")               .
+    addEventListener("change", updateHeaveRate);
 document.getElementById("surfaceCheck")             .
     addEventListener("change", updateSurface);
 document.getElementById("surfaceEffectCheck")       .
@@ -299,8 +303,10 @@ function init() {
     updateTargetHeight();
     updatePitch();
     updatePitchDynamic();
+    updatePitchRate();
     updateHeave();
     updateHeaveDynamic();
+    updateHeaveRate();
     updateSurface();
     updateSurfaceEffect();
     updateBuoyancy();
@@ -529,8 +535,10 @@ function update() {
     dt = sampleTime;// +0*dt;
     simulation_time = simulation_time + dt;
     inv_mass = 1. / mass;
-    uvw_body_grnd_NED.add(XYZ_all_body_NED.clone().multiplyScalar(inv_mass*dt))
-    if (false==isHeaveDynamic) {
+    if (true==isHeaveDynamic) {
+        uvw_body_grnd_NED.add(XYZ_all_body_NED.clone().multiplyScalar(inv_mass*dt))
+    }
+    else {
         uvw_body_grnd_NED.z = 0
     }
     uvw_body_grnd_NED.x = V +
@@ -538,16 +546,20 @@ function update() {
     //console.log(uvw_body_grnd_NED)
     xyz_body_grnd_NED.add(uvw_body_grnd_NED.clone().multiplyScalar(dt))
     
-    pqr_body_grnd_FSD.add(KMN_all_body_FSD.clone().
+    if (true==isPitchDynamic) {
+        pqr_body_grnd_FSD.add(KMN_all_body_FSD.clone().
         multiplyScalar(1 / pitchInertia * dt));
-    if (false==isPitchDynamic) {
-        pqr_body_grnd_FSD.y = 0;
+    }
+    else {
+        pqr_body_grnd_FSD.y = pqr_body_grnd_FSD.y;
     }
     pitch = pitch + pqr_body_grnd_FSD.y * dt;
     
     //console.log(xyz_body_grnd_NED)
     updateHeave();
+    updateHeaveRate();
     updatePitch();
+    updatePitchRate();
     
 }
 function rotateFoil(r) {
@@ -662,6 +674,23 @@ function updatePitchDynamic() {
     var myCheck = document.getElementById("pitchDynamicCheck");
     isPitchDynamic = myCheck.checked;
 }
+function updatePitchRate() {
+    //get elements
+    var myRange = document.getElementById("pitchRateRange");
+    var myOutput = document.getElementById("pitchRate");
+    var myCheck = document.getElementById("pitchDynamicCheck");
+    isPitchDynamic = myCheck.checked;
+    if (isPitchDynamic==true)
+    {
+        myRange.value = pqr_body_grnd_FSD.y*180/Math.PI;
+    }
+    else
+    {
+        pqr_body_grnd_FSD.y = myRange.value*Math.PI/180;
+    }
+    //copy the value over
+        myOutput.value = myRange.value;
+}
 function updateHeave() {
     //get elements
     var myRange = document.getElementById("heaveRange");
@@ -682,6 +711,22 @@ function updateHeaveDynamic() {
     //get elements
     var myCheck = document.getElementById("heaveDynamicCheck");
     isHeaveDynamic = myCheck.checked;
+}
+function updateHeaveRate() {
+    //get elements
+    var myRange = document.getElementById("heaveRateRange");
+    var myOutput = document.getElementById("heaveRate");
+    var myCheck = document.getElementById("heaveDynamicCheck");
+    isHeaveDynamic = myCheck.checked;
+    if (isHeaveDynamic==true) {
+        myRange.value = -uvw_body_grnd_NED.z;
+    }
+    else
+    {
+        uvw_body_grnd_NED.z = -myRange.value;
+    }
+    //copy the value over
+    myOutput.value = myRange.value;
 }
 function updateSurface() {
         //get elements
