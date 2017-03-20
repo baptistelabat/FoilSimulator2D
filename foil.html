@@ -20,7 +20,8 @@
           <g transform="translate(350,250) ">
              
             <line id="grnd" x1="-1000" y1="-000" x2="1000" y2="000" style="stroke:rgb(0,0,255);stroke-width:2" />
-            <g id="body_frame" transform="translate(0,0)">
+            <line id="target_height" x1="-1000" y1="-50" x2="1000" y2="-50" style="stroke:rgb(255,0,0);stroke-width:2" />  
+			<g id="body_frame" transform="translate(0,0)">
               <g id="body__rotate_frame" transform="translate(0,0)">
                 <g id="ref_frame" transform="translate(0,-0)">
                   <line id="keel" x1="0" y1="12.5" x2="750" y2="12.5" style="stroke:rgb(0,0,0);stroke-width:2" />
@@ -45,6 +46,16 @@
           </g>
     </svg>
     <form action = "">
+	    <fieldset>
+      Target height
+			<input id = "targetHeightRange"
+				type = "range"
+				min = "0"
+				max = "1.5"
+				value = "1"
+				step = "0.1" />
+			<output id = "targetHeight">1</output>m
+		</fieldset>
           <fieldset>
       Pitch
 			<input id = "pitchRange"

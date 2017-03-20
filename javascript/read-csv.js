@@ -55,8 +55,8 @@ function drawOutput(lines){
     i_CL    = 2;
     i_CD    = 3;
     alpha_deg[i] = parseFloat(lines[i][i_alpha]);
-    CL[i] = parseFloat(lines[i][i_CL]);
-    CD[i] = parseFloat(lines[i][i_CD]);
+    g_CLs[i] = parseFloat(lines[i][i_CL]);
+    g_CDs[i] = parseFloat(lines[i][i_CD]);
 		var row = table.insertRow(-1);
 		for (var j = 0; j < Math.min(1,lines[i].length); j++) {
 			var firstNameCell = row.insertCell(-1);
