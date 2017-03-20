@@ -1053,6 +1053,8 @@ function computeBuoyancy() {
     
     CTM.makeRotationFromEuler(rpy);
     invCTM.getInverse(CTM);
+    
+    // Compute the position of the 4 points describing the boat in ground frame
     xyz_ref_grnd_NED = xyz_body_ref_FSD.clone().multiplyScalar(-1).
         applyMatrix4(invCTM).add(xyz_body_grnd_NED);
     xyz_hAB_grnd_NED = xyz_hAB_ref_FSD.clone().
@@ -1064,24 +1066,38 @@ function computeBuoyancy() {
     xyz_hFT_grnd_NED = xyz_hFT_ref_FSD.clone().
         applyMatrix4(invCTM).add(xyz_ref_grnd_NED);
     
+    // Create a polygon which represents the hull
     var hullPolygon = CSG.fromPolygons([[
             [xyz_hAB_grnd_NED.x, xyz_hAB_grnd_NED.z],
             [xyz_hAT_grnd_NED.x, xyz_hAT_grnd_NED.z],
             [xyz_hFT_grnd_NED.x, xyz_hFT_grnd_NED.z],
             [xyz_hFB_grnd_NED.x, xyz_hFB_grnd_NED.z]]]);
+            
+    // Create the polygon which represents the sea
     var waterPolygon = CSG.fromPolygons([[
             [-1e20, 0],
             [ 1e20, 0],
             [ 1e20, 1000],
             [-1e20, 1000]]]);
+            
+    // Compute the immersed part of hull
     var immersedHullPolygons = hullPolygon.intersect(waterPolygon).toPolygons();
     if (immersedHullPolygons.length>0) {
-        volume = polyarea(immersedHullPolygons[0])
-        centroid = polycentroid(immersedHullPolygons[0])
+        volume = polyarea(immersedHullPolygons[0]);
+        centroid = polycentroid(immersedHullPolygons[0]);
     }
     else { 
         volume = 0;
-        centroid = {x: 0, y: 0};
+        items = [
+        {   x: xyz_hAB_grnd_NED.x, y : xyz_hAB_grnd_NED.z},
+        {   x: xyz_hAT_grnd_NED.x, y : xyz_hAT_grnd_NED.z},
+        {   x: xyz_hFT_grnd_NED.x, y : xyz_hFT_grnd_NED.z},
+        {   x: xyz_hFB_grnd_NED.x, y : xyz_hFB_grnd_NED.z},
+        ];
+        items.sort(function (a, b) {
+            return a.y - b.y;
+        });
+        centroid = items[3];
     }
     
     xyz_buoyancy_grnd_NED.x = centroid.x;
@@ -1102,6 +1118,7 @@ function computeBuoyancy() {
 //var w2 = window.open("C:/Users/labat/perso/visu3D/visu3D.html")
 
 function localStore() {
+    // use this to be able to send data to the 3D view in another page
     localStorage.setItem('x', xyz_body_grnd_NED.x);
     localStorage.setItem('y', xyz_body_grnd_NED.y);
     localStorage.setItem('z', xyz_body_grnd_NED.z);
