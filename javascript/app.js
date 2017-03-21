@@ -1,43 +1,9 @@
-//"use strict"
+"use strict"
 console.log("This is a foil simulator");
 var g_CLs = [],
     g_CDs = [],
     g_alphas_deg = [];
-function liftCoefficient(alpha, AR, CLs, alphas_deg) {
-    // This is a simplified formula for lift coefficient
-    // Maximum lift at 45°
-    // No lift at 90°
-    // Negative lift from 90°
-    // http://people.clarkson.edu/~pmarzocc/AE429/AE-429-4.pdf
-    var dCl= 2*Math.PI,//infinite elliptic wing for small angle
-        e  = 1,// Oswald efficiency factor
-        Cl;
-    // AR= span^2/kite_surface;
-    // alphai= Cl/(Math.PI*e*AR);
-    
-    // dCL = dCl*AR/(AR+2.5)
-    dCL = dCl / (1 + dCl / (Math.PI * e * AR));
-    Cl = dCL /2. * Math.sin (2 * alpha);
-    if (CLs.length>0) {
-        Cl = everpolate.linear(alpha * 180 / Math.PI, alphas_deg, CLs);
-    }
-    
-    return Cl;
- }
-function dragCoefficient(alpha, AR, CDs, alphas_deg) {
-    var Cd0 = 0.1,
-        e = 1,
-        Cd,
-        inducedDragCoefficient;
-        
-    inducedDragCoefficient = 
-        Math.pow(2 * Math.PI * Math.sin(alpha), 2) / (Math.PI * AR * e);
-    Cd = inducedDragCoefficient + Cd0;
-    if (CDs.length>0) {
-        Cd = everpolate.linear(alpha * 180 / Math.PI, alphas_deg, CDs);
-    }
-    return Cd;
-}
+
 
 // Environment parameters
 var airDensity         = 1.225,
@@ -59,18 +25,18 @@ var mass                = 3000,
     stallAngle          = 0,
     stallRecoveryAngle  = 0,
     initialDraft        = 0.25,
-    Lpp                 = 13,
+    Lpp                 = 15,
 
     isFoilStall         = false,
-    isElevStall         = false;
+    isElevStall         = false,
     
-    heaveStiffness      = 0;
+    heaveStiffness      = 0,
     pitchStiffness      = 0;
 
 // Simulation parameter
 var sampleTime          = 0.0005, // Sample time
-    isHeaveDynamic      = true,
-    isPitchDyanmic      = true,
+    isHeaveDynamic      = false,
+    isPitchDynamic      = false,
     isBuoyancy          = true,
     isSurfaceEffect     = true,
     isSurface           = true,
@@ -131,8 +97,8 @@ var uvw_fluid_grnd_NED  = new THREE.Vector3( 0, 0, 0 ),
     uvw_elev_grnd_NED   = new THREE.Vector3( 0, 0, 0 );
 
 // Hull extremity for archimedian thrust
-var xyz_hAB_ref_FSD = new THREE.Vector3( 0, 0, initialDraft),   // Hull Aft Bottom
-    xyz_hFB_ref_FSD = new THREE.Vector3( Lpp, 0, initialDraft), // Hull fore Bottom
+var xyz_hAB_ref_FSD = new THREE.Vector3( 0, 0, 0),   // Hull Aft Bottom
+    xyz_hFB_ref_FSD = new THREE.Vector3( Lpp, 0, 0), // Hull fore Bottom
     xyz_hAT_ref_FSD = new THREE.Vector3( 0, 0, -1),             // Hull Aft Top
     xyz_hFT_ref_FSD = new THREE.Vector3( Lpp, 0, -1);           // Hull fore Top
 
@@ -300,17 +266,22 @@ var simulation_time = 0;
 //create and fill a circular buffar to store foil rake a be able to apply pure delay
 var rake = [];
 var i_rakeBuffer = 0;
+init();
 function saveRake() {
     i_rakeBuffer = i_rakeBuffer + 1
-    if (i_rakeBuffer>20) {i_rakeBuffer = 0;}
+    if (i_rakeBuffer>20) {
+        i_rakeBuffer = 0;
+    }
     rake[i_rakeBuffer] = foilRake;
 }
 function getRakeDelayed(delay) {
-    i_delay = i_rakeBuffer-Math.round(delay/0.1)
-    if (i_delay<0){i_delay = i_delay + 20}
-    return rake[i_delay]
+    // Create a round robin circular list to store history of rake
+    var i_delay = i_rakeBuffer - Math.round(delay / 0.1); // History is sampled at 10Hz
+    if (i_delay<0) {
+        i_delay = i_delay + 20;
+    }
+    return rake[i_delay];
 }
-
 function init() {
     // Do init to be sure values are the same as described in html page
     updateTargetHeight();
@@ -350,7 +321,6 @@ function init() {
     updateBodyVerticalUpPosition();
     updateFluid();
 }
-init();
 function plot(body_position, foil_position, elevator_position, foil_rake, elevator_rake) {
     plotTargetHeight();
     plotFoil();
@@ -385,12 +355,11 @@ function updaten() {
         update();
     }
 }
-
 function computeForcesOnLiftingSurface(CTM, pitch, uvw_fluid_grnd_NED,
     uvw_surf_grnd_NED, xyz_surf_grnd_NED, xyz_surf_body_FSD, AoK, density, chord, z_waterSurface,
     isSurfaceEffect, isSurface, isSurfStall, surfArea, surfAspectRatio) {
         
-    var angle_uvw_surface_fluid_NED, q, AoA, chord,
+    var angle_uvw_surf_fluid_NED, q, AoA, chord, lift, drag,
         inverseMirrorEffect=1,
         dragSurfaceEffect=1,
         stallEffect=1;
@@ -481,15 +450,20 @@ function computeWeight(CTM, mass, g, xyz_CoG_body_FSD) {
     KMN_wght_body_FSD = tmp.clone().
         crossVectors(xyz_CoG_body_FSD, XYZ_wght_body_FSD );
 }
-
 function computeForces() {
     
     var rpy    = new THREE.Euler( 0, -pitch, 0, 'XYZ' ),
         CTM    = new THREE.Matrix4,
         invCTM = new THREE.Matrix4,
-        tmp    = new THREE.Vector3( 0, 0, 0 );
+        tmp    = new THREE.Vector3( 0, 0, 0 ),
+        uvw_foil_grnd_NED_grnd_NED = new THREE.Vector3( 0, 0, 0 ),
+        xyz_foil_grnd_NED = new THREE.Vector3( 0, 0, 0 ),
+        uvw_elev_grnd_NED = new THREE.Vector3( 0, 0, 0 ),
+        xyz_elev_grnd_NED = new THREE.Vector3( 0, 0, 0 ),
+        KMN_foil_body_NED = new THREE.Vector3( 0, 0, 0 ),
+        KMN_elev_body_NED = new THREE.Vector3( 0, 0, 0 );
       
-    var z_waterSurface = 0;
+    var z_waterSurface = 0, AoK, chord, res = [];
       
     // Compute the Coordinate Transform Matrix from ground to body frame
     CTM.makeRotationFromEuler(rpy);
@@ -553,9 +527,9 @@ function computeForces() {
 }
 function update() {
     computeForces();
-    dt = sampleTime;// +0*dt;
+    var dt = sampleTime;
     simulation_time = simulation_time + dt;
-    inv_mass = 1. / mass;
+    var inv_mass = 1. / mass;
     if (true==isHeaveDynamic) {
         uvw_body_grnd_NED.add(XYZ_all_body_NED.clone().multiplyScalar(inv_mass*dt))
     }
@@ -569,7 +543,7 @@ function update() {
     
     if (true==isPitchDynamic) {
         pqr_body_grnd_FSD.add(KMN_all_body_FSD.clone().
-        multiplyScalar(1 / pitchInertia * dt));
+            multiplyScalar(1 / pitchInertia * dt));
     }
     else {
         pqr_body_grnd_FSD.y = pqr_body_grnd_FSD.y;
@@ -585,17 +559,17 @@ function update() {
 }
 function rotateFoil(r) {
     var foilFrame = document.getElementById("foil");
-    r_deg = r * 180 / Math.PI;
+    var r_deg = r * 180 / Math.PI;
     foilFrame.setAttribute('transform', 'rotate(' +-r_deg + ')');
 }
 function rotateElevator(r) {
     var elevatorFrame = document.getElementById("elevator");
-    r_deg = r * 180 / Math.PI;
+    var r_deg = r * 180 / Math.PI;
     elevatorFrame.setAttribute('transform', 'rotate(' +-r_deg + ')');
 }
 function rotateBody(r) {
     var bodyFrame = document.getElementById("body__rotate_frame");
-    r_deg = r * 180 / Math.PI;
+    var r_deg = r * 180 / Math.PI;
     bodyFrame.setAttribute('transform', 'rotate(' +-r_deg + ')');
 }
 function translateFoil(x, z) {
@@ -604,15 +578,15 @@ function translateFoil(x, z) {
 }
 function translateElevator(x, z) {
     var elevator_frame = document.getElementById("elevator_frame");
-    elevator_frame.setAttribute('transform', 'translate(' + x * meter2pix + ',' + z * meter2pix + ')');
+    elevator_frame.setAttribute('transform', 'translate(' + (x * meter2pix) + ',' + (z * meter2pix) + ')');
 }
 function translateCenterOfInertia(x, z) {
     var elevator_frame = document.getElementById("CoG_frame");
-    elevator_frame.setAttribute('transform', 'translate(' +x * meter2pix + ',' + z * meter2pix + ')');
+    elevator_frame.setAttribute('transform', 'translate(' + (x * meter2pix) + ',' + (z * meter2pix) + ')');
 }
 function translateBuoyancy(x, z) {
     var B_frame = document.getElementById("B_frame");
-    B_frame.setAttribute('transform', 'translate(' + x * meter2pix + ',' + z * meter2pix + ')');
+    B_frame.setAttribute('transform', 'translate(' + (x * meter2pix) + ',' + (z * meter2pix) + ')');
 }
 function translateBody(x, z) {
     var body_frame = document.getElementById("body_frame");
@@ -622,7 +596,6 @@ function translateRef(x, z) {
     var ref_frame = document.getElementById("ref_frame");
     ref_frame.setAttribute('transform', 'translate(' + x * meter2pix + ',' + z * meter2pix + ')');
 }
-
 function plotFoil() {
     var chord = Math.sqrt(foilArea / foilAspectRatio);
     var foil = document.getElementById("foil");
@@ -630,16 +603,19 @@ function plotFoil() {
     foil.setAttribute('x2', 1 / 3 * chord * meter2pix);
 }
 function plotElevator() {
-    var chord = Math.sqrt(elevatorArea/elevatorAspectRatio);
+    var chord = Math.sqrt(elevatorArea / elevatorAspectRatio);
     var elevator = document.getElementById("elevator");
     elevator.setAttribute('x1', -2 / 3. * chord * meter2pix);
     elevator.setAttribute('x2', 1 / 3 * chord * meter2pix);
 }
 function plotShip() {
-    var length = 13;
-    var elevator = document.getElementById("keel");
-    elevator.setAttribute('x1', 0 * meter2pix);
-    elevator.setAttribute('x2', length * meter2pix);
+    var length = 15;
+    var keel = document.getElementById("keel");
+    keel.setAttribute('x1', 0 * meter2pix);
+    keel.setAttribute('x2', length * meter2pix);
+    var freeboard = document.getElementById("freeboard");
+    freeboard.setAttribute('x1', 0 * meter2pix);
+    freeboard.setAttribute('x2', length * meter2pix);
 }
 function plotTargetHeight() {
     var targetHeightLine = document.getElementById("target_height");
@@ -814,9 +790,6 @@ function updateFoilRakeStep() {
     foilRakeStep  = myRange.value * Math.PI / 180;
     myTarget.step = foilRakeStep * 180 / Math.PI;
 }
-
-
-
 function updateFlightSpeed() {
     //get elements
     var myRange = document.getElementById("flightSpeedRange");
@@ -850,9 +823,8 @@ function updateLongitudinalCenterOfInertiaPosition() {
     xyz_CoG_ref_FSD.x = myOutput.value * 1.;
     xyz_CoG_body_FSD = xyz_CoG_ref_FSD.clone().sub(xyz_body_ref_FSD);
     var myRange = document.getElementById("bodyLongiRange");
-    myRange.value = myOutput.value
-    updateBodyLongitudinalPosition
-    
+    myRange.value = myOutput.value;
+    updateBodyLongitudinalPosition();
 }
 function updateVerticalUpCenterOfInertiaPosition(){
     //get elements
@@ -869,7 +841,6 @@ function updateVerticalUpCenterOfInertiaPosition(){
 }
 function updateGravity() {
     //get elements
-    
     var myCheck = document.getElementById("gravityCheck");
     g = earth_gravity*myCheck.checked;
 }
@@ -971,14 +942,14 @@ function updateBodyLongitudinalPosition() {
     var myOutput = document.getElementById("bodyLongi");
     //copy the value over
     myOutput.value = myRange.value;
-    xyz_body_ref_FSD_old = new THREE.Vector3( 0, 0, 0 );
+    var xyz_body_ref_FSD_old = new THREE.Vector3( 0, 0, 0 );
     xyz_body_ref_FSD_old = xyz_body_ref_FSD.clone();
     xyz_body_ref_FSD.x = myOutput.value * 1.;
     xyz_foil_body_FSD = xyz_foil_ref_FSD.clone().sub(xyz_body_ref_FSD);
     xyz_elev_body_FSD = xyz_elev_ref_FSD.clone().sub(xyz_body_ref_FSD);
     xyz_CoG_body_FSD = xyz_CoG_ref_FSD.clone().sub(xyz_body_ref_FSD);
-    CTM = new THREE.Matrix4;
-    invCTM = new THREE.Matrix4;
+    var CTM = new THREE.Matrix4;
+    var invCTM = new THREE.Matrix4;
     var rpy = new THREE.Euler( 0, -pitch, 0, 'XYZ' );
     CTM.makeRotationFromEuler(rpy);
     invCTM.getInverse(CTM);
@@ -995,15 +966,15 @@ function updateBodyVerticalUpPosition(){
     var myOutput = document.getElementById("bodyVertUp");
     //copy the value over
     myOutput.value = myRange.value * 1.;
-    xyz_body_ref_FSD_old = new THREE.Vector3( 0, 0, 0 );
+    var xyz_body_ref_FSD_old = new THREE.Vector3( 0, 0, 0 );
     xyz_body_ref_FSD_old=xyz_body_ref_FSD.clone()
     xyz_body_ref_FSD.z = -myOutput.value;
     xyz_foil_body_FSD = xyz_foil_ref_FSD.clone().sub(xyz_body_ref_FSD);
     xyz_elev_body_FSD = xyz_elev_ref_FSD.clone().sub(xyz_body_ref_FSD);
     xyz_CoG_body_FSD = xyz_CoG_ref_FSD.clone().sub(xyz_body_ref_FSD);
     
-    CTM = new THREE.Matrix4;
-    invCTM = new THREE.Matrix4;
+    var CTM = new THREE.Matrix4;
+    var invCTM = new THREE.Matrix4;
     var rpy = new THREE.Euler( 0, -pitch, 0, 'XYZ' );
     CTM.makeRotationFromEuler(rpy);
     invCTM.getInverse(CTM);
@@ -1013,11 +984,10 @@ function updateBodyVerticalUpPosition(){
     var myOutput = document.getElementById("heave");
     myRange.value = -xyz_body_grnd_NED.z;
     myOutput.value = -xyz_body_grnd_NED.z;
-    
 }
 function updateOutput() {
     
-    myOutput = document.getElementById("time");
+    var myOutput = document.getElementById("time");
     myOutput.value = Math.round(simulation_time * 100) / 100;
     
     myOutput = document.getElementById("instantFlightSpeed");
@@ -1026,7 +996,6 @@ function updateOutput() {
     myOutput = document.getElementById("rakeMeanPower");
     myOutput.value = Math.round(rakeMeanPower * 10) / 10;
 }
-
 function updateFluid() {
     var mySelect = document.getElementById("fluidSelect");
     if (mySelect.value == "Air") {
@@ -1035,21 +1004,26 @@ function updateFluid() {
     else if (mySelect.value == "Water") {
         density = 1025;
     }
-  
 }
-
 function computeBarycenter3(P1,P2,P3) {
   P = P1.clone().add(P2).add(P3).multiplyScalar(1/3.);
   return P;
 }
 function computeBuoyancy() {  
     var volume = 0;
+    var force = 0;
     var CTM    = new THREE.Matrix4,
         invCTM = new THREE.Matrix4,
         rpy    = new THREE.Euler( 0, -pitch, 0, 'XYZ' ),
         tmp    = new THREE.Vector3( 0, 0, 0 ),
         tmp1   = new THREE.Vector3( 0, 0, 0 ),
-        tmp2   = new THREE.Vector3( 0, 0, 0 );
+        tmp2   = new THREE.Vector3( 0, 0, 0 ),
+        xyz_ref_grnd_NED = new THREE.Vector3( 0, 0, 0 ),
+        xyz_hAB_grnd_NED = new THREE.Vector3( 0, 0, 0 ),
+        xyz_hFB_grnd_NED = new THREE.Vector3( 0, 0, 0 ),
+        xyz_hAT_grnd_NED = new THREE.Vector3( 0, 0, 0 ),
+        xyz_hFT_grnd_NED = new THREE.Vector3( 0, 0, 0 ),
+        centroid = {x: 0, y:0};
     
     CTM.makeRotationFromEuler(rpy);
     invCTM.getInverse(CTM);
@@ -1086,9 +1060,10 @@ function computeBuoyancy() {
         volume = polyarea(immersedHullPolygons[0]);
         centroid = polycentroid(immersedHullPolygons[0]);
     }
-    else { 
+    else {
+        // volume is zero and centroid undefined, but take the most down point to ensure continuity
         volume = 0;
-        items = [
+        var items = [
         {   x: xyz_hAB_grnd_NED.x, y : xyz_hAB_grnd_NED.z},
         {   x: xyz_hAT_grnd_NED.x, y : xyz_hAT_grnd_NED.z},
         {   x: xyz_hFT_grnd_NED.x, y : xyz_hFT_grnd_NED.z},
@@ -1112,11 +1087,6 @@ function computeBuoyancy() {
     KMN_buoyancy_body_FSD = tmp.clone().
         crossVectors(xyz_buoyancy_body_FSD, XYZ_buoyancy_body_FSD);
 }
-
-// Deals with 3D view
-//var w2 = window.open("https://rawgit.com/baptistelabat/visu3D/master/visu3D.html")
-//var w2 = window.open("C:/Users/labat/perso/visu3D/visu3D.html")
-
 function localStore() {
     // use this to be able to send data to the 3D view in another page
     localStorage.setItem('x', xyz_body_grnd_NED.x);
@@ -1124,8 +1094,7 @@ function localStore() {
     localStorage.setItem('z', xyz_body_grnd_NED.z);
     localStorage.setItem('pitch', pitch);
     localStorage.setItem('t', simulation_time);
-}
-  
+} 
 function polyarea(vertices) {
     // Computes the area of a polygon
     // http://stackoverflow.com/questions/16285134/calculating-polygon-area
@@ -1155,4 +1124,38 @@ function polycentroid(vertices) {
     }
     var centroid = {x: 1 / (6 * area) * totalx, y: 1 / (6 * area) * totaly};
     return centroid;
+}
+function liftCoefficient(alpha, AR, CLs, alphas_deg) {
+    // This is a simplified formula for lift coefficient
+    // Maximum lift at 45°
+    // No lift at 90°
+    // Negative lift from 90°
+    // http://people.clarkson.edu/~pmarzocc/AE429/AE-429-4.pdf
+    var dCl= 2*Math.PI,//infinite elliptic wing for small angle
+        e  = 1,// Oswald efficiency factor
+        Cl,
+        dCL;
+    // AR= span^2/kite_surface;
+    // alphai= Cl/(Math.PI*e*AR);
+    // dCL = dCl*AR/(AR+2.5)
+    dCL = dCl / (1 + dCl / (Math.PI * e * AR));
+    Cl = dCL /2. * Math.sin (2 * alpha);
+    if (CLs.length>0) {
+        Cl = everpolate.linear(alpha * 180 / Math.PI, alphas_deg, CLs);
+    }
+    return Cl;
+ }
+function dragCoefficient(alpha, AR, CDs, alphas_deg) {
+    var Cd0 = 0.1,
+        e = 1,
+        Cd,
+        inducedDragCoefficient;
+        
+    inducedDragCoefficient = 
+        Math.pow(2 * Math.PI * Math.sin(alpha), 2) / (Math.PI * AR * e);
+    Cd = inducedDragCoefficient + Cd0;
+    if (CDs.length>0) {
+        Cd = everpolate.linear(alpha * 180 / Math.PI, alphas_deg, CDs);
+    }
+    return Cd;
 }
