@@ -55,6 +55,12 @@ var V                    = 10,
     pitch                = 2.2 * Math.PI / 180,
     rakeMeanPower        = 0,
     flightSpeedVariation = 0;
+var    elevatorRakeFiltCorrection = 0;
+
+// Control parameters
+var x_virtual = 13;
+var allowedElevatorRakeForControl = 0.5*Math.PI/180;
+var allowedElevatorRakeForControlTimeConstant = 5;
 
 // NED (North, East, Down) convention is used
 // x is positive forward
@@ -132,12 +138,19 @@ var KMN_foil_body_FSD     = new THREE.Vector3( 0, 0, 0 ),
 
 // Control
 var elevatorRake  = 0,
+    elevatorRakeTotal =0,  
     foilRake      = 0;
     
 pqr_body_grnd_FSD.y = q0;
 
 document.getElementById("targetHeightRange")        .
     addEventListener("change", updateTargetHeight);
+document.getElementById("virtualForceLongiRange")        .
+    addEventListener("change", updateVirtualForceLongi);
+document.getElementById("allowedElevatorRakeForControlRange")        .
+    addEventListener("change", updateAllowedElevatorRakeForControl);
+document.getElementById("allowedElevatorRakeForControlTimeConstantRange")        .
+    addEventListener("change", updateAllowedElevatorRakeForControlTimeConstant);
 document.getElementById("pitchRange")               .
     addEventListener("change", updatePitch);
 document.getElementById("pitchDynamicCheck")        .
@@ -221,13 +234,20 @@ document.addEventListener("wheel", function(ev) {
 window.onwheel = function() { return false; }
 
 document.addEventListener("keydown", function (event) {
+
+    var x_rudder = xyz_elev_ref_FSD.x;
+    var x_foil = xyz_foil_ref_FSD.x;
+    var S_foil = foilArea;
+    var S_rudder = elevatorArea;
     if (event.defaultPrevented) {
         return; // Should do nothing if the key event was already consumed.
     }
     switch (event.key) {
+        case "7":
         case "ArrowUp":
             foilRake = foilRake + foilRakeStep;
             break;
+        case "1":
         case "ArrowDown":
             foilRake = foilRake - foilRakeStep;
             break;
@@ -237,7 +257,27 @@ document.addEventListener("keydown", function (event) {
         case "ArrowLeft":
             elevatorRake = elevatorRake - elevatorRakeStep;
             break;
+        case "8": //Up
+            foilRake = foilRake + (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
+            elevatorRake = elevatorRake + (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep;
+            break;
+        case "2": //Down
+            foilRake = foilRake - (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
+            elevatorRake = elevatorRake - (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep;
+            break;
+        case "9": //Up
+            foilRake = foilRake + (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
+            elevatorRakeFiltCorrection = elevatorRakeFiltCorrection+ (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep
+            elevatorRakeFiltCorrection = Math.min(elevatorRakeFiltCorrection, allowedElevatorRakeForControl)
+            
+            break;
+        case "3": //Down
+            foilRake = foilRake -  (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
+            elevatorRakeFiltCorrection = elevatorRakeFiltCorrection- (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep
+            elevatorRakeFiltCorrection = Math.max(elevatorRakeFiltCorrection, - allowedElevatorRakeForControl)
+            break;
         default:
+            //console.log(event.key)
             return; // Quit when this doesn't handle the key event.
     }
     var myRange = document.getElementById("foilRakeRange");
@@ -249,7 +289,7 @@ document.addEventListener("keydown", function (event) {
     var myRange = document.getElementById("elevatorRakeRange");
     var myOutput = document.getElementById("elevatorRake");
     //copy the value over
-    myOutput.value = Math.round(elevatorRake * 180 / Math.PI * 100) / 100;
+    myOutput.value = Math.round(elevatorRakeTotal * 180 / Math.PI * 100) / 100;
     myRange.value=myOutput.value;
 
     // Consume the event for suppressing "double action".
@@ -285,6 +325,9 @@ function getRakeDelayed(delay) {
 function init() {
     // Do init to be sure values are the same as described in html page
     updateTargetHeight();
+    updateVirtualForceLongi();
+    updateAllowedElevatorRakeForControl();
+    updateAllowedElevatorRakeForControlTimeConstant();
     updatePitch();
     updatePitchDynamic();
     updatePitchRate();
@@ -338,6 +381,7 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
     translateFoil(xyz_foil_ref_FSD.x, xyz_foil_ref_FSD.z);
     translateElevator(xyz_elev_ref_FSD.x, xyz_elev_ref_FSD.z);
     translateCenterOfInertia(xyz_CoG_ref_FSD.x, xyz_CoG_ref_FSD.z);
+    translateVirtual(x_virtual)
     rotateFoil(foil_rake);
     rotateElevator(elevator_rake); 
 
@@ -346,7 +390,7 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
 }
 function updatePlot() {
     plot(xyz_body_grnd_NED, xyz_foil_body_FSD, xyz_elev_body_FSD,
-        foilRake, elevatorRake, pitch);
+        foilRake, elevatorRakeTotal, pitch);
     updateOutput();
 }
 function updaten() {
@@ -528,6 +572,8 @@ function computeForces() {
 function update() {
     computeForces();
     var dt = sampleTime;
+    elevatorRakeFiltCorrection  =     elevatorRakeFiltCorrection*Math.exp(-dt/allowedElevatorRakeForControlTimeConstant);
+    elevatorRakeTotal = elevatorRake + elevatorRakeFiltCorrection;
     simulation_time = simulation_time + dt;
     var inv_mass = 1. / mass;
     if (true==isHeaveDynamic) {
@@ -596,6 +642,10 @@ function translateRef(x, z) {
     var ref_frame = document.getElementById("ref_frame");
     ref_frame.setAttribute('transform', 'translate(' + x * meter2pix + ',' + z * meter2pix + ')');
 }
+function translateVirtual(x) {
+    var ref_frame = document.getElementById("virtual_frame");
+    ref_frame.setAttribute('transform', 'translate(' + x * meter2pix + ',' + 0 * meter2pix + ')');
+}
 function plotFoil() {
     var chord = Math.sqrt(foilArea / foilAspectRatio);
     var foil = document.getElementById("foil");
@@ -647,6 +697,28 @@ function updateTargetHeight() {
         var myRange = document.getElementById("targetHeightRange");
         var myOutput = document.getElementById("targetHeight");
         targetHeight = myRange.value;
+        myOutput.value = myRange.value;
+}
+
+function updateVirtualForceLongi() {
+        //get elements
+        var myRange = document.getElementById("virtualForceLongiRange");
+        var myOutput = document.getElementById("virtualForceLongi");
+        x_virtual = myRange.value;
+        myOutput.value = myRange.value;
+}
+function updateAllowedElevatorRakeForControl() {
+        //get elements
+        var myRange = document.getElementById("allowedElevatorRakeForControlRange");
+        var myOutput = document.getElementById("allowedElevatorRakeForControl");
+        allowedElevatorRakeForControl = myRange.value*Math.PI/180;
+        myOutput.value = myRange.value
+}
+function updateAllowedElevatorRakeForControlTimeConstant() {
+        //get elements
+        var myRange = document.getElementById("allowedElevatorRakeForControlTimeConstantRange");
+        var myOutput = document.getElementById("allowedElevatorRakeForControlTimeConstant");
+        allowedElevatorRakeForControlTimeConstant = myRange.value;
         myOutput.value = myRange.value;
 }
 function updatePitch() {
@@ -1005,6 +1077,7 @@ function updateFluid() {
         density = 1025;
     }
 }
+
 function computeBarycenter3(P1,P2,P3) {
   P = P1.clone().add(P2).add(P3).multiplyScalar(1/3.);
   return P;

@@ -41,6 +41,9 @@
                   <line id="foil" x1="0" y1="0" x2="10" y2="0" style="stroke:rgb(255,0,0);stroke-width:2" />
                   <path id="Ffoil" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/> 
                 </g>
+                <g id="virtual_frame" transform="translate(0,-0)">
+                     <circle id="virtualPoint" cx="00" cy="12.5" r="5" stroke="black" stroke-width="1" fill="red" />
+                </g>
               </g>
               </g>
             </g>
@@ -50,12 +53,38 @@
 	    <fieldset>
       Target height
 			<input id = "targetHeightRange"
-				type = "range"
+				type = "input"
 				min = "0"
 				max = "1.5"
 				value = "1"
 				step = "0.1" />
 			<output id = "targetHeight">1</output>m
+           </fieldset>
+          <fieldset>
+      Virtual point longitudinal position
+			<input id = "virtualForceLongiRange"
+				type = "range"
+				min = "0"
+				max = "20"
+				value = "15"
+				step = "0.1" />
+			<output id = "virtualForceLongi">1</output>m
+        Allowed elevator rake for control
+			<input id = "allowedElevatorRakeForControlRange"
+				type = "range"
+				min = "0"
+				max = "1.5"
+				value = "0.5"
+				step = "0.1" />
+			<output id = "allowedElevatorRakeForControl">1</output>°
+      Time constant
+			<input id = "allowedElevatorRakeForControlTimeConstantRange"
+				type = "range"
+				min = "0.5"
+				max = "15"
+				value = "5"
+				step = "0.1" />
+			<output id = "allowedElevatorRakeForControlTimeConstant">1</output>s
 		</fieldset>
           <fieldset>
       Pitch
@@ -82,7 +111,7 @@
 				max = "2"
 				value = "0.0"
 				step = "0.1" />
-			<output id = "pitchStiffness">2</output>°/m
+			<output id = "pitchStiffness">2</output>°/°
      </fieldset>
      <fieldset>
       Height
@@ -106,7 +135,7 @@
 				type = "range"
 				min = "0.0"
 				max = "10"
-				value = "2"
+				value = "0.0"
 				step = "0.1" />
 			<output id = "heaveStiffness">2</output>°/m
         </fieldset>
@@ -175,7 +204,7 @@
 				type = "range"
 				min = "0.1"
 				max = "5000"
-				value = "3000"
+				value = "2800"
 				step = "0.1" />
 			<output id = "mass">2</output>kg
       Longitudinal coordinates
@@ -183,7 +212,7 @@
 				type = "range"
 				min = "0"
 				max = "15"
-				value = "6"
+				value = "5.9"
 				step = "0.1" />
 			<output id = "CGLongi">2</output>m
       Vertical coordinates
@@ -191,7 +220,7 @@
 				type = "range"
 				min = "-10"
 				max = "10"
-				value = "3"
+				value = "2.4"
 				step = "0.1" />
 			<output id = "CGVertUp">2</output>m
         Gravity? <input type="checkbox" id="gravityCheck" checked =true>
@@ -212,7 +241,7 @@
 				type = "range"
 				min = "0"
 				max = "20"
-				value = "0.4"
+				value = "0.38"
 				step = "0.01" />
 			<output id = "elevatorArea">6</output>m²
       Foil area
@@ -220,7 +249,7 @@
 				type = "range"
 				min = "0"
 				max = "20"
-				value = "1"
+				value = "0.6"
 				step = "0.01" />
 			<output id = "foilArea">6</output>m²
     </fieldset>
@@ -248,7 +277,7 @@
 				type = "range"
 				min = "8"
 				max = "25"
-				value = "15"
+				value = "25"
 				step = "0.1" />
 			<output id = "stallAngle">15</output>°
       Stall recovering angle of attack
@@ -256,7 +285,7 @@
 				type = "range"
 				min = "6"
 				max = "25"
-				value = "13"
+				value = "14"
 				step = "0.1" />
 			<output id = "stallRecoveryAngle">13</output>°
     </fieldset>
@@ -266,7 +295,7 @@
 				type = "range"
 				min = "-5"
 				max = "15"
-				value = "0"
+				value = "0.25"
 				step = "0.01" />
 			<output id = "elevatorLongi">2</output>m
       Foil longitudinal coordinates
@@ -274,7 +303,7 @@
 				type = "range"
 				min = "0"
 				max = "15"
-				value = "7"
+				value = "7.68"
 				step = "0.01" />
 			<output id = "foilLongi">2</output>m
       </fieldset>
@@ -284,7 +313,7 @@
 				type = "range"
 				min = "-10"
 				max = "10"
-				value = "-2"
+				value = "-2.4"
 				step = "0.01" />
 			<output id = "elevatorVertUp">2</output>m
       Foil vertical coordinates
@@ -292,7 +321,7 @@
 				type = "range"
 				min = "-10"
 				max = "10"
-				value = "-2"
+				value = "-2.4"
 				step = "0.01" />
 			<output id = "foilVertUp">2</output>m
       </fieldset>
