@@ -62,6 +62,9 @@ var x_virtual = 13;
 var allowedElevatorRakeForControl = 0.5*Math.PI/180;
 var allowedElevatorRakeForControlTimeConstant = 5;
 
+var x_rotationAxis = 0;
+var z_rotationAxis = 0;
+
 // NED (North, East, Down) convention is used
 // x is positive forward
 // y is positive to starboard
@@ -235,6 +238,7 @@ window.onwheel = function() { return false; }
 
 document.addEventListener("keydown", function (event) {
 
+  var mySelect = document.getElementById("controlSelect");
     var x_rudder = xyz_elev_ref_FSD.x;
     var x_foil = xyz_foil_ref_FSD.x;
     var S_foil = foilArea;
@@ -243,38 +247,55 @@ document.addEventListener("keydown", function (event) {
         return; // Should do nothing if the key event was already consumed.
     }
     switch (event.key) {
-        case "7":
         case "ArrowUp":
-            foilRake = foilRake + foilRakeStep;
-            break;
-        case "1":
+            switch (mySelect.value){
+                case "FoilOnlySelect":
+                    foilRake = foilRake + foilRakeStep;
+                    break;
+                case "ElevatorOnlySelect":
+                    elevatorRake = elevatorRake - elevatorRakeStep;
+                    break;
+                case "FoilAndElevatorSelect":
+                    foilRake = foilRake + (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
+                    elevatorRake = elevatorRake + (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep;
+					break;
+                case "FoilAndElevatorSatSelect":
+                    foilRake = foilRake + (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
+                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection+ (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep
+                    elevatorRakeFiltCorrection = Math.min(elevatorRakeFiltCorrection, allowedElevatorRakeForControl)
+                    break;
+                default:
+                    //console.log(event.key)
+                    return; // Quit when this doesn't handle the key event.
+            }
+            break
         case "ArrowDown":
-            foilRake = foilRake - foilRakeStep;
+            switch (mySelect.value){
+                case "FoilOnlySelect":
+                    foilRake = foilRake - foilRakeStep;
+                    break;
+                case "ElevatorOnlySelect":
+                    elevatorRake = elevatorRake + elevatorRakeStep;
+                    break;
+                case "FoilAndElevatorSelect":
+                    foilRake = foilRake - (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
+                    elevatorRake = elevatorRake - (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep;
+					break;
+                case "FoilAndElevatorSatSelect":
+                    foilRake = foilRake - (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
+                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection + (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep
+                    elevatorRakeFiltCorrection = Math.max(elevatorRakeFiltCorrection, -allowedElevatorRakeForControl)
+                    break;
+                default:
+                    //console.log(event.key)
+                    return; // Quit when this doesn't handle the key event.
+            }
             break;
         case "ArrowRight":
             elevatorRake = elevatorRake + elevatorRakeStep;
             break;
         case "ArrowLeft":
             elevatorRake = elevatorRake - elevatorRakeStep;
-            break;
-        case "8": //Up
-            foilRake = foilRake + (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
-            elevatorRake = elevatorRake + (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep;
-            break;
-        case "2": //Down
-            foilRake = foilRake - (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
-            elevatorRake = elevatorRake - (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep;
-            break;
-        case "9": //Up
-            foilRake = foilRake + (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
-            elevatorRakeFiltCorrection = elevatorRakeFiltCorrection+ (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep
-            elevatorRakeFiltCorrection = Math.min(elevatorRakeFiltCorrection, allowedElevatorRakeForControl)
-            
-            break;
-        case "3": //Down
-            foilRake = foilRake -  (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
-            elevatorRakeFiltCorrection = elevatorRakeFiltCorrection- (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep
-            elevatorRakeFiltCorrection = Math.max(elevatorRakeFiltCorrection, - allowedElevatorRakeForControl)
             break;
         default:
             //console.log(event.key)
@@ -382,6 +403,7 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
     translateElevator(xyz_elev_ref_FSD.x, xyz_elev_ref_FSD.z);
     translateCenterOfInertia(xyz_CoG_ref_FSD.x, xyz_CoG_ref_FSD.z);
     translateVirtual(x_virtual)
+    translateRotationAxis(x_rotationAxis, z_rotationAxis);
     rotateFoil(foil_rake);
     rotateElevator(elevator_rake); 
 
@@ -601,7 +623,12 @@ function update() {
     updateHeaveRate();
     updatePitch();
     updatePitchRate();
+    updateRotationAxis();
     
+}
+function updateRotationAxis() {
+    x_rotationAxis = xyz_CoG_ref_FSD.x-pitchInertia/(mass*x_virtual-xyz_CoG_ref_FSD.x);
+    z_rotationAxis = xyz_CoG_ref_FSD.z;
 }
 function rotateFoil(r) {
     var foilFrame = document.getElementById("foil");
@@ -645,6 +672,10 @@ function translateRef(x, z) {
 function translateVirtual(x) {
     var ref_frame = document.getElementById("virtual_frame");
     ref_frame.setAttribute('transform', 'translate(' + x * meter2pix + ',' + 0 * meter2pix + ')');
+}
+function translateRotationAxis(x, z) {
+    var ref_frame = document.getElementById("inertialRotationAxis_frame");
+    ref_frame.setAttribute('transform', 'translate(' + x * meter2pix + ',' + z * meter2pix + ')');
 }
 function plotFoil() {
     var chord = Math.sqrt(foilArea / foilAspectRatio);
