@@ -103,7 +103,9 @@ var uvw_fluid_grnd_NED  = new THREE.Vector3( 0, 0, 0 ),
     xyz_elev_ref_FSD    = new THREE.Vector3( 0, 0, 0 ),
     xyz_elev_body_FSD   = new THREE.Vector3( 0, 0, 0 ),
     xyz_foil_grnd_FSD   = new THREE.Vector3( 0, 0, 0 ),
-    uvw_elev_grnd_NED   = new THREE.Vector3( 0, 0, 0 );
+    uvw_elev_grnd_NED   = new THREE.Vector3( 0, 0, 0 ),
+    xyz_output_ref_FSD  = new THREE.Vector3( 0, 0, 0 ),
+    xyz_output_grnd_NED = new THREE.Vector3( 0, 0, 0 );
 
 // Hull extremity for archimedian thrust
 var xyz_hAB_ref_FSD = new THREE.Vector3( 0, 0, 0),   // Hull Aft Bottom
@@ -218,10 +220,10 @@ document.getElementById("elevatorVertUpRange")      .
     addEventListener("change", updateElevatorVerticalUpPosition);
 document.getElementById("foilVertUpRange")          .
     addEventListener("change", updateFoilVerticalUpPosition);
-//document.getElementById("bodyLongiRange")           . 
-    //addEventListener("change", updateBodyLongitudinalPosition);
-//document.getElementById("bodyVertUpRange")          .
-    //addEventListener("change", updateBodyVerticalUpPosition);
+document.getElementById("outputLongiRange")           . 
+    addEventListener("change", updateOutputLongitudinalPosition);
+document.getElementById("outputVertUpRange")          .
+    addEventListener("change", updateOutputVerticalUpPosition);
 document.getElementById("fluidSelect")              .
     addEventListener("change", updateFluid);
 
@@ -383,6 +385,8 @@ function init() {
     updateFoilVerticalUpPosition();
     updateBodyLongitudinalPosition();
     updateBodyVerticalUpPosition();
+    updateOutputLongitudinalPosition();
+    updateOutputVerticalUpPosition();
     updateFluid();
 }
 function plot(body_position, foil_position, elevator_position, foil_rake, elevator_rake) {
@@ -589,6 +593,9 @@ function computeForces() {
         add(KMN_buoyancy_body_FSD);
     //console.log(XYZ_wght_body_FSD);
     //console.log(KMN_wght_body_FSD);
+    
+        xyz_output_grnd_NED = (xyz_output_ref_FSD.clone().sub(xyz_body_ref_FSD)).
+    	applyMatrix4(invCTM).add(xyz_body_grnd_NED);
     
 }
 function update() {
@@ -1063,7 +1070,7 @@ function updateBodyLongitudinalPosition() {
     myRange.value = -xyz_body_grnd_NED.z;
     myOutput.value = -xyz_body_grnd_NED.z;
 }
-function updateBodyVerticalUpPosition(){
+function updateBodyVerticalUpPosition() {
     //get elements
     var myRange = document.getElementById("bodyVertUpRange");
     var myOutput = document.getElementById("bodyVertUp");
@@ -1088,16 +1095,20 @@ function updateBodyVerticalUpPosition(){
     myRange.value = -xyz_body_grnd_NED.z;
     myOutput.value = -xyz_body_grnd_NED.z;
 }
+function updateOutputLongitudinalPosition() {
+    var myRange = document.getElementById("outputLongiRange");
+    var myOutput = document.getElementById("outputLongi");
+    myOutput.value = myRange.value;
+    xyz_output_ref_FSD.x = myRange.value*1.0;
+}
+function updateOutputVerticalUpPosition() {
+    var myRange = document.getElementById("outputVertUpRange");
+    var myOutput = document.getElementById("outputVertUp");
+    myOutput.value = myRange.value;
+    xyz_output_ref_FSD.z = -myRange.value*1.0;
+}
+    
 function updateOutput() {
-    
-    var myOutput = document.getElementById("time");
-    myOutput.value = Math.round(simulation_time * 100) / 100;
-    
-    myOutput = document.getElementById("instantFlightSpeed");
-    myOutput.value = Math.round(uvw_body_grnd_NED.x * 3600/1852 * 10) / 10;
-    
-    myOutput = document.getElementById("rakeMeanPower");
-    myOutput.value = Math.round(rakeMeanPower * 10) / 10;
 }
 function updateFluid() {
     var mySelect = document.getElementById("fluidSelect");
@@ -1193,10 +1204,12 @@ function computeBuoyancy() {
 }
 function localStore() {
     // use this to be able to send data to the 3D view in another page
-    localStorage.setItem('x', xyz_body_grnd_NED.x);
-    localStorage.setItem('y', xyz_body_grnd_NED.y);
-    localStorage.setItem('z', xyz_body_grnd_NED.z);
+    localStorage.setItem('x', xyz_output_grnd_NED.x);
+    localStorage.setItem('y', xyz_output_grnd_NED.y);
+    localStorage.setItem('z', xyz_output_grnd_NED.z);
+    localStorage.setItem('roll', 0);
     localStorage.setItem('pitch', pitch);
+    localStorage.setItem('yaw', 0);
     localStorage.setItem('t', simulation_time);
 } 
 function polyarea(vertices) {

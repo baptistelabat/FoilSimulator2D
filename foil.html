@@ -5,53 +5,68 @@
 </head>
 <body>
   <p>Foil simulator <a href="https://github.com/baptistelabat/FoilSimulator2D">(source code)</a><br>
-  <output id = "time">0</output>s
-  <output id = "instantFlightSpeed">0</output>kt   
- Rake mean power <output id = "rakeMeanPower">0</output>W<br>
-    </p>
-    <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" width="2000" height="500">
-    <marker id="triangle"
-      viewBox="0 0 20 20" refX="0" refY="10" 
-      markerUnits="strokeWidth"
-      markerWidth="8" markerHeight="6"
-      orient="auto">
-      <path d="M 0 0 L 20 10 L 0 20 z" />
-    </marker>
-          <g transform="translate(350,250) ">
-             
-            <line id="grnd" x1="-1000" y1="-000" x2="1000" y2="000" style="stroke:rgb(0,0,255);stroke-width:2" />
-            <line id="freeboard" x1="-1000" y1="-000" x2="1000" y2="000" style="stroke:rgb(0,0,255);stroke-width:2" />
-            <line id="target_height" x1="-1000" y1="-50" x2="1000" y2="-50" style="stroke:rgb(255,0,0);stroke-width:2" />  
-			<g id="body_frame" transform="translate(0,0)">
-              <g id="body__rotate_frame" transform="translate(0,0)">
-                <g id="ref_frame" transform="translate(0,-0)">
-                  <line id="keel" x1="0" y1="12.5" x2="750" y2="12.5" style="stroke:rgb(0,0,0);stroke-width:2" />
-                  <g id="CoG_frame" transform="translate(0,-0)">
-                    <path id="Fweight" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/>
-                    <path id="Fall" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="red"/>
+ <table>
+  <tr>
+    <td rowspan="3">
+        <div style="display:none;">
+        <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" width="900" height="400">
+        <marker id="triangle"
+          viewBox="0 0 20 20" refX="0" refY="10" 
+          markerUnits="strokeWidth"
+          markerWidth="8" markerHeight="6"
+          orient="auto">
+          <path d="M 0 0 L 20 10 L 0 20 z" />
+        </marker>
+              <g transform="translate(350,250) ">
+                 
+                <line id="grnd" x1="-1000" y1="-000" x2="1000" y2="000" style="stroke:rgb(0,0,255);stroke-width:2" />
+                <line id="freeboard" x1="-1000" y1="-000" x2="1000" y2="000" style="stroke:rgb(0,0,255);stroke-width:2" />
+                <line id="target_height" x1="-1000" y1="-50" x2="1000" y2="-50" style="stroke:rgb(255,0,0);stroke-width:2" />  
+                <g id="body_frame" transform="translate(0,0)">
+                  <g id="body__rotate_frame" transform="translate(0,0)">
+                    <g id="ref_frame" transform="translate(0,-0)">
+                      <line id="keel" x1="0" y1="12.5" x2="750" y2="12.5" style="stroke:rgb(0,0,0);stroke-width:2" />
+                      <g id="CoG_frame" transform="translate(0,-0)">
+                        <path id="Fweight" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/>
+                        <path id="Fall" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="red"/>
+                      </g>
+                      <g id="B_frame" transform="translate(0,-0)">
+                        <path id="Fbuoyancy" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/>
+                      </g>
+                      <g id="elevator_frame" transform="translate(0,-0)">
+                        <line id="elevator" x1="0" y1="0" x2="10" y2="00" style="stroke:rgb(0,0,0);stroke-width:2" />
+                        <path id="Felevator" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/> 
+                      </g>
+                    <g id="foil_frame" transform="rotate(0)">
+                      <line id="foil" x1="0" y1="0" x2="10" y2="0" style="stroke:rgb(255,0,0);stroke-width:2" />
+                      <path id="Ffoil" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/> 
+                    </g>
+                    <g id="virtual_frame" transform="translate(0,-0)">
+                         <circle id="virtualPoint" cx="00" cy="12.5" r="5" stroke="black" stroke-width="1" fill="red" />
+                    </g>
+                    <g id="inertialRotationAxis_frame" transform="translate(0,-0)">
+                         <circle id="rotationAxis" cx="00" cy="12.5" r="5" stroke="black" stroke-width="1" fill="red" />
+                    </g>
                   </g>
-                  <g id="B_frame" transform="translate(0,-0)">
-                    <path id="Fbuoyancy" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/>
                   </g>
-                  <g id="elevator_frame" transform="translate(0,-0)">
-                    <line id="elevator" x1="0" y1="0" x2="10" y2="00" style="stroke:rgb(0,0,0);stroke-width:2" />
-                    <path id="Felevator" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/> 
-                  </g>
-                <g id="foil_frame" transform="rotate(0)">
-                  <line id="foil" x1="0" y1="0" x2="10" y2="0" style="stroke:rgb(255,0,0);stroke-width:2" />
-                  <path id="Ffoil" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/> 
-                </g>
-                <g id="virtual_frame" transform="translate(0,-0)">
-                     <circle id="virtualPoint" cx="00" cy="12.5" r="5" stroke="black" stroke-width="1" fill="red" />
-                </g>
-                <g id="inertialRotationAxis_frame" transform="translate(0,-0)">
-                     <circle id="rotationAxis" cx="00" cy="12.5" r="5" stroke="black" stroke-width="1" fill="red" />
                 </g>
               </g>
-              </g>
-            </g>
-          </g>
-    </svg>
+              </div>
+              <div style="display:blocked;">
+          <iframe width="900" height="400" src="https://rawgit.com/baptistelabat/visu3D/master/visu3D.html"></iframe>
+          </div>
+        </td>
+    <td>Foil Rake<font size="30" color="red">0°</font></td>
+  </tr>
+  <tr>
+    <td>Elevator Rake<font size="30" color="red">0°</font></td>
+  </tr>
+  <tr>
+    <td>Other<font size="30" color="red">0°</font></td>
+  </tr>
+</table>
+
+
     <form action = "">
          Control: <select id="controlSelect">
         <option value="FoilAndElevatorSatSelect">Foil and elevator saturated</option>
@@ -336,12 +351,31 @@
 			<output id = "foilVertUp">2</output>m
       </fieldset>
             <fieldset>
+          Output reference point longitudinal coordinates
+			<input id = "outputLongiRange"
+				type = "range"
+				min = "-10"
+				max = "10"
+				value = "6"
+				step = "0.01" />
+			<output id = "outputLongi">2</output>m
+      Output reference point vertical coordinates
+			<input id = "outputVertUpRange"
+				type = "range"
+				min = "-10"
+				max = "10"
+				value = "0"
+				step = "0.01" />
+			<output id = "outputVertUp">2</output>m
+      </fieldset>
+      <div style="display:blocked;">
+       <fieldset>
           Computational reference point longitudinal coordinates
 			<input id = "bodyLongiRange"
 				type = "range"
 				min = "-10"
 				max = "10"
-				value = "6"
+				value = "7.8"
 				step = "0.01" />
 			<output id = "bodyLongi">2</output>m
       Computational reference point vertical coordinates
@@ -349,10 +383,11 @@
 				type = "range"
 				min = "-10"
 				max = "10"
-				value = "0"
+				value = "-0.25"
 				step = "0.01" />
 			<output id = "bodyVertUp">2</output>m
       </fieldset>
+	  </div>
       <fieldset>
       <select id="fluidSelect">
         <option value="Water">Water</option>
