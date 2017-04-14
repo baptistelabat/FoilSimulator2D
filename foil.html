@@ -8,7 +8,7 @@
  <table>
   <tr>
     <td rowspan="3">
-        <div style="display:none;">
+        <div id="2DFrame" style="display:blocked;">
         <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" width="900" height="400">
         <marker id="triangle"
           viewBox="0 0 20 20" refX="0" refY="10" 
@@ -52,17 +52,20 @@
                 </g>
               </g>
               </div>
-              <div style="display:blocked;">
+              <div id="3DFrame" style="display:none;">
           <iframe width="900" height="400" src="https://rawgit.com/baptistelabat/visu3D/master/visu3D.html"></iframe>
           </div>
         </td>
-    <td>Foil Rake<font size="30" color="red">0°</font></td>
+    <td>Foil Rake</td>
+    <td id="foilRakeDisplay"><font size="30" color="red">0°</font></td>
   </tr>
   <tr>
-    <td>Elevator Rake<font size="30" color="red">0°</font></td>
+    <td>Elevator Rake</td>
+    <td id="elevatorRakeDisplay"><font size="30" color="red">0°</font></td>
   </tr>
   <tr>
-    <td>Other<font size="30" color="red">0°</font></td>
+    <td>Other</td>
+    <td><font size="30" color="red">0°</font></td>
   </tr>
 </table>
 
@@ -73,6 +76,10 @@
         <option value="FoilOnlySelect">Foil only</option>
         <option value="ElevatorOnlySelect">Elevator only</option>
         <option value="FoilAndElevatorSelect">Foil and elevator</option>
+        </select>
+        View: <select id="viewSelect">
+        <option value="2DviewSelect">2D</option>
+        <option value="3DviewSelect">3D</option>
         </select>
     		<fieldset>
       Elevator Rake Angle

@@ -148,6 +148,8 @@ var elevatorRake  = 0,
     
 pqr_body_grnd_FSD.y = q0;
 
+document.getElementById("viewSelect")        .
+    addEventListener("change", updateView);
 document.getElementById("targetHeightRange")        .
     addEventListener("change", updateTargetHeight);
 document.getElementById("virtualForceLongiRange")        .
@@ -263,7 +265,7 @@ document.addEventListener("keydown", function (event) {
 					break;
                 case "FoilAndElevatorSatSelect":
                     foilRake = foilRake + (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
-                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection+ (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep
+                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection + (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep
                     elevatorRakeFiltCorrection = Math.min(elevatorRakeFiltCorrection, allowedElevatorRakeForControl)
                     break;
                 default:
@@ -285,7 +287,7 @@ document.addEventListener("keydown", function (event) {
 					break;
                 case "FoilAndElevatorSatSelect":
                     foilRake = foilRake - (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
-                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection + (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep
+                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection - (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep
                     elevatorRakeFiltCorrection = Math.max(elevatorRakeFiltCorrection, -allowedElevatorRakeForControl)
                     break;
                 default:
@@ -730,6 +732,24 @@ function plotFall() {
   var arrow = document.getElementById("Fall");
   arrow.setAttribute('d', "M" + 0*meter2pix + " " + 0 * meter2pix+ " L"+ XYZ_all_body_FSD.x*Newton2meter * meter2pix +" "+ XYZ_all_body_FSD.z*Newton2meter*meter2pix);
 }
+function updateView() {
+    var mySelect = document.getElementById("viewSelect");
+    var my2Dframe = document.getElementById("2DFrame");
+    var my3Dframe = document.getElementById("3DFrame");
+
+    switch( mySelect.value) {
+        case "2DviewSelect":
+            my2Dframe.style = "display:blocked;";
+            my3Dframe.style = "display:none;";
+            break
+        case "3DviewSelect":
+            my2Dframe.style = "display:none;";
+            my3Dframe.style = "display:blocked;";
+            break
+        default:
+            return
+    }
+}
 function updateTargetHeight() {
         //get elements
         var myRange = document.getElementById("targetHeightRange");
@@ -1109,6 +1129,14 @@ function updateOutputVerticalUpPosition() {
 }
     
 function updateOutput() {
+    var foil = document.getElementById("foilRakeDisplay");
+    var elev = document.getElementById("elevatorRakeDisplay");
+    foil.innerHTML = (foilRake*180/Math.PI).toFixed(1) + "°";
+    foil.style.fontSize= "40px"
+    foil.style.color="red";
+    elev.innerHTML = (elevatorRakeTotal*180/Math.PI).toFixed(1) + "°";
+    elev.style.fontSize= "40px"
+    elev.style.color="red";
 }
 function updateFluid() {
     var mySelect = document.getElementById("fluidSelect");
