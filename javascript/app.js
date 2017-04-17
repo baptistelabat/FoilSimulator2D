@@ -275,12 +275,12 @@ document.addEventListener("keydown", function (event) {
                     elevatorRake = elevatorRake - elevatorRakeStep;
                     break;
                 case "FoilAndElevatorSelect":
-                    foilRake = foilRake + (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep*stepGain;
-                    elevatorRake = elevatorRake + (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain;
+                    foilRake = foilRake + foilRakeStep*stepGain;
+                    elevatorRake = elevatorRake + (x_virtual-x_foil)/(x_virtual-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain;
 					break;
                 case "FoilAndElevatorSatSelect":
-                    foilRake = foilRake + (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep*stepGain;
-                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection + (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain
+                    foilRake = foilRake + foilRakeStep*stepGain;
+                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection + (x_virtual-x_foil)/(x_virtual-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain
                     elevatorRakeFiltCorrection = Math.min(elevatorRakeFiltCorrection, allowedElevatorRakeForControl)
                     break;
                 default:
@@ -298,12 +298,12 @@ document.addEventListener("keydown", function (event) {
                     elevatorRake = elevatorRake + elevatorRakeStep;
                     break;
                 case "FoilAndElevatorSelect":
-                    foilRake = foilRake - (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep*stepGain;
-                    elevatorRake = elevatorRake - (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain;
+                    foilRake = foilRake - foilRakeStep*stepGain;
+                    elevatorRake = elevatorRake - (x_virtual-x_foil)/(x_virtual-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain;
 					break;
                 case "FoilAndElevatorSatSelect":
-                    foilRake = foilRake - (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep*stepGain;
-                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection - (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain
+                    foilRake = foilRake - foilRakeStep*stepGain;
+                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection - (x_virtual-x_foil)/(x_virtual-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain
                     elevatorRakeFiltCorrection = Math.max(elevatorRakeFiltCorrection, -allowedElevatorRakeForControl)
                     break;
                 default:
