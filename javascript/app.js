@@ -44,6 +44,11 @@ var sampleTime          = 0.0005, // Sample time
     foilRakeStep        = 0.2 * Math.PI / 180.,
     elevatorRakeStep    = 0.1 * Math.PI / 180.,
     targetHeight        = 1;
+   
+var ma_ts = 0.01;
+var ma = simple_moving_averager(3/ma_ts);
+var movingAverage = 0;
+var wasConsecutiveClicks = 0;
 
     // Plot parameter
 var meter2pix           = 50,
@@ -146,6 +151,10 @@ var elevatorRake  = 0,
     elevatorRakeTotal =0,  
     foilRake      = 0;
     
+var keyExpCount = 1;
+var previousKeySign = 0;
+var stepGain = 0;
+    
 pqr_body_grnd_FSD.y = q0;
 
 document.getElementById("viewSelect")        .
@@ -228,7 +237,12 @@ document.getElementById("outputVertUpRange")          .
     addEventListener("change", updateOutputVerticalUpPosition);
 document.getElementById("fluidSelect")              .
     addEventListener("change", updateFluid);
-
+setInterval(updateMovingAverage, ma_ts*1000);
+function updateMovingAverage() {
+    movingAverage = ma(wasConsecutiveClicks);
+    movingAverage = movingAverage*3/ma_ts;
+    wasConsecutiveClicks = 0;
+}    
 document.addEventListener("wheel", function(ev) {
     foilRake = foilRake - ev.deltaY / Math.abs(ev.deltaY) * foilRakeStep
     var myRange  = document.getElementById("foilRakeRange");
@@ -241,7 +255,7 @@ document.addEventListener("wheel", function(ev) {
 window.onwheel = function() { return false; }
 
 document.addEventListener("keydown", function (event) {
-
+    var keySign=0;
   var mySelect = document.getElementById("controlSelect");
     var x_rudder = xyz_elev_ref_FSD.x;
     var x_foil = xyz_foil_ref_FSD.x;
@@ -252,20 +266,21 @@ document.addEventListener("keydown", function (event) {
     }
     switch (event.key) {
         case "ArrowUp":
+            keySign = +1;
             switch (mySelect.value){
                 case "FoilOnlySelect":
-                    foilRake = foilRake + foilRakeStep;
+                    foilRake = foilRake + foilRakeStep*stepGain;
                     break;
                 case "ElevatorOnlySelect":
                     elevatorRake = elevatorRake - elevatorRakeStep;
                     break;
                 case "FoilAndElevatorSelect":
-                    foilRake = foilRake + (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
-                    elevatorRake = elevatorRake + (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep;
+                    foilRake = foilRake + (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep*stepGain;
+                    elevatorRake = elevatorRake + (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain;
 					break;
                 case "FoilAndElevatorSatSelect":
-                    foilRake = foilRake + (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
-                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection + (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep
+                    foilRake = foilRake + (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep*stepGain;
+                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection + (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain
                     elevatorRakeFiltCorrection = Math.min(elevatorRakeFiltCorrection, allowedElevatorRakeForControl)
                     break;
                 default:
@@ -274,20 +289,21 @@ document.addEventListener("keydown", function (event) {
             }
             break
         case "ArrowDown":
+            keySign = -1;
             switch (mySelect.value){
                 case "FoilOnlySelect":
-                    foilRake = foilRake - foilRakeStep;
+                    foilRake = foilRake - foilRakeStep*stepGain;
                     break;
                 case "ElevatorOnlySelect":
                     elevatorRake = elevatorRake + elevatorRakeStep;
                     break;
                 case "FoilAndElevatorSelect":
-                    foilRake = foilRake - (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
-                    elevatorRake = elevatorRake - (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep;
+                    foilRake = foilRake - (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep*stepGain;
+                    elevatorRake = elevatorRake - (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain;
 					break;
                 case "FoilAndElevatorSatSelect":
-                    foilRake = foilRake - (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep;
-                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection - (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep
+                    foilRake = foilRake - (x_virtual-x_rudder)/(x_foil-x_rudder)*foilRakeStep*stepGain;
+                    elevatorRakeFiltCorrection = elevatorRakeFiltCorrection - (x_virtual-x_foil)/(x_foil-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain
                     elevatorRakeFiltCorrection = Math.max(elevatorRakeFiltCorrection, -allowedElevatorRakeForControl)
                     break;
                 default:
@@ -305,6 +321,12 @@ document.addEventListener("keydown", function (event) {
             //console.log(event.key)
             return; // Quit when this doesn't handle the key event.
     }
+    if (keySign == previousKeySign) {
+        keyExpCount = keyExpCount + 1;
+        wasConsecutiveClicks = 1;
+    }
+    previousKeySign = keySign;
+        
     var myRange = document.getElementById("foilRakeRange");
     var myOutput = document.getElementById("foilRake");
     //copy the value over
@@ -603,8 +625,22 @@ function computeForces() {
 function update() {
     computeForces();
     var dt = sampleTime;
+    
     elevatorRakeFiltCorrection  =     elevatorRakeFiltCorrection*Math.exp(-dt/allowedElevatorRakeForControlTimeConstant);
     elevatorRakeTotal = elevatorRake + elevatorRakeFiltCorrection;
+    
+    keyExpCount = keyExpCount*Math.exp(-dt/5);
+    //keyMovingAverageCount = 
+    if (document.getElementById("autoRakeStepCheck").checked) {
+        stepGain = Math.min(0.7511*Math.exp(0.0604*movingAverage), 2.5);
+        //stepGain = Math.min(0.7511*Math.exp(0.0604*keyExpCount), 2.5);
+    }
+    else {
+        stepGain = 1;
+    }
+    
+        
+        
     simulation_time = simulation_time + dt;
     var inv_mass = 1. / mass;
     if (true==isHeaveDynamic) {
@@ -1131,12 +1167,14 @@ function updateOutputVerticalUpPosition() {
 function updateOutput() {
     var foil = document.getElementById("foilRakeDisplay");
     var elev = document.getElementById("elevatorRakeDisplay");
+    var stepGainDisp = document.getElementById("stepGainDisplay");
     foil.innerHTML = (foilRake*180/Math.PI).toFixed(1) + "°";
     foil.style.fontSize= "40px"
     foil.style.color="red";
     elev.innerHTML = (elevatorRakeTotal*180/Math.PI).toFixed(1) + "°";
     elev.style.fontSize= "40px"
     elev.style.color="red";
+    stepGainDisp.innerHTML = stepGain;
 }
 function updateFluid() {
     var mySelect = document.getElementById("fluidSelect");
@@ -1303,4 +1341,19 @@ function dragCoefficient(alpha, AR, CDs, alphas_deg) {
         Cd = everpolate.linear(alpha * 180 / Math.PI, alphas_deg, CDs);
     }
     return Cd;
+}
+function simple_moving_averager(period) {
+    var nums = [];
+    return function(num) {
+        nums.push(num);
+        if (nums.length > period)
+            nums.splice(0,1);  // remove the first element of the array
+        var sum = 0;
+        for (var i in nums)
+            sum += nums[i];
+        var n = period;
+        if (nums.length < period)
+            n = nums.length;
+        return(sum/n);
+    }
 }
