@@ -281,7 +281,6 @@ document.addEventListener("keydown", function (event) {
                 case "FoilAndElevatorSatSelect":
                     foilRake = foilRake + foilRakeStep*stepGain;
                     elevatorRakeFiltCorrection = elevatorRakeFiltCorrection - (x_virtual-x_foil)/(x_virtual-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain
-                    elevatorRakeFiltCorrection = Math.min(elevatorRakeFiltCorrection, allowedElevatorRakeForControl)
                     break;
                 default:
                     //console.log(event.key)
@@ -304,7 +303,6 @@ document.addEventListener("keydown", function (event) {
                 case "FoilAndElevatorSatSelect":
                     foilRake = foilRake - foilRakeStep*stepGain;
                     elevatorRakeFiltCorrection = elevatorRakeFiltCorrection + (x_virtual-x_foil)/(x_virtual-x_rudder)*S_foil/S_rudder*foilRakeStep*stepGain
-                    elevatorRakeFiltCorrection = Math.max(elevatorRakeFiltCorrection, -allowedElevatorRakeForControl)
                     break;
                 default:
                     //console.log(event.key)
@@ -321,6 +319,8 @@ document.addEventListener("keydown", function (event) {
             //console.log(event.key)
             return; // Quit when this doesn't handle the key event.
     }
+    elevatorRakeFiltCorrection = Math.min(Math.max(elevatorRakeFiltCorrection, -allowedElevatorRakeForControl), allowedElevatorRakeForControl);
+                    
     if (keySign == previousKeySign) {
         keyExpCount = keyExpCount + 1;
         wasConsecutiveClicks = 1;
