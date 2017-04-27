@@ -4,6 +4,14 @@ var g_CLs = [],
     g_CDs = [],
     g_alphas_deg = [];
 
+// LED param    
+var strip, strip2; // need to be global
+var container = document.getElementById("ledstrip");
+var container2 = document.getElementById("ledstrip2");
+var light_count = 35;
+strip = LEDstrip(container, light_count);
+strip2 = LEDstrip(container2, light_count);
+    
 
 // Environment parameters
 var airDensity         = 1.225,
@@ -43,7 +51,7 @@ var sampleTime          = 0.0005, // Sample time
     foilRakeDelay       = 0,
     foilRakeStep        = 0.2 * Math.PI / 180.,
     elevatorRakeStep    = 0.1 * Math.PI / 180.,
-    targetHeight        = 1;
+    targetHeight        = -1;
    
 var ma_ts = 0.01;
 var ma = simple_moving_averager(3/ma_ts);
@@ -66,6 +74,10 @@ var    elevatorRakeFiltCorrection = 0;
 var x_virtual = 13;
 var allowedElevatorRakeForControl = 0.5*Math.PI/180;
 var allowedElevatorRakeForControlTimeConstant = 5;
+
+var APEngage = 0;
+var APtarget = 0;
+var APRake   = 0;
 
 var x_rotationAxis = 0;
 var z_rotationAxis = 0;
@@ -154,7 +166,7 @@ var elevatorRake  = 0,
 var keyExpCount = 1;
 var previousKeySign = 0;
 var stepGain = 0;
-    
+
 pqr_body_grnd_FSD.y = q0;
 
 document.getElementById("viewSelect")        .
@@ -265,6 +277,12 @@ document.addEventListener("keydown", function (event) {
         return; // Should do nothing if the key event was already consumed.
     }
     switch (event.key) {
+        case "i":
+            APEngage = 1;
+            break;
+        case "o":
+            APEngage = 0;
+            break;
         case "ArrowUp":
             keySign = +1;
             switch (mySelect.value){
@@ -438,6 +456,28 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
     // For 3D view in other tab
     localStore()
 }
+function updateLED() {
+    var mu = (APRake-foilRake)/foilRakeStep/10;
+    //mu = 0
+    mu = Math.max(-1, Math.min(mu, 1))
+    var sigma = 0.01;
+    for (var i=0;i<light_count;i++) {
+        var x = i/(light_count-1)*2 -1
+        if ((mu==1) || (mu==-1)) {
+            if (Math.abs(mu-x)<0.1) {
+                strip.buffer[i] = [255, 0, 0]
+            }
+            else {
+                strip.buffer[i] = [0, 0, 0]
+            }
+            
+        }
+        else {    
+                strip.buffer[i] = [0, Math.floor(255*Math.exp(-Math.pow(x-mu, 2)/(2*sigma))), 0]
+        }
+    }
+    strip.send();
+}
 function updatePlot() {
     plot(xyz_body_grnd_NED, xyz_foil_body_FSD, xyz_elev_body_FSD,
         foilRake, elevatorRakeTotal, pitch);
@@ -448,6 +488,7 @@ function updaten() {
     // Dirty manual tuning to get close of real time on my computer
         update();
     }
+    updateLED()
 }
 function computeForcesOnLiftingSurface(CTM, pitch, uvw_fluid_grnd_NED,
     uvw_surf_grnd_NED, xyz_surf_grnd_NED, xyz_surf_body_FSD, AoK, density, chord, z_waterSurface,
@@ -622,6 +663,14 @@ function computeForces() {
     	applyMatrix4(invCTM).add(xyz_body_grnd_NED);
     
 }
+
+function computeFF() {
+    return 3*Math.PI/180
+}
+function computeAP() {
+    APtarget = computeFF() + (xyz_output_grnd_NED.z-targetHeight)*(2)*Math.PI/180 + (pitch - 0)*(-0.5) -0.5*pqr_body_grnd_FSD.y
+    return APtarget;
+}
 function update() {
     computeForces();
     var dt = sampleTime;
@@ -638,6 +687,11 @@ function update() {
     else {
         stepGain = 1;
     }
+    
+    APRake = computeAP();
+    if (APEngage) {
+        foilRake = APRake;
+    }      
     
         
         
@@ -745,8 +799,8 @@ function plotShip() {
 }
 function plotTargetHeight() {
     var targetHeightLine = document.getElementById("target_height");
-    targetHeightLine.setAttribute('y1', -targetHeight*meter2pix);
-    targetHeightLine.setAttribute('y2', -targetHeight*meter2pix);
+    targetHeightLine.setAttribute('y1', targetHeight*meter2pix);
+    targetHeightLine.setAttribute('y2', targetHeight*meter2pix);
 }
 function plotWeight() {
     var arrow = document.getElementById("Fweight");
@@ -790,7 +844,7 @@ function updateTargetHeight() {
         //get elements
         var myRange = document.getElementById("targetHeightRange");
         var myOutput = document.getElementById("targetHeight");
-        targetHeight = myRange.value;
+        targetHeight = -1.*myRange.value;
         myOutput.value = myRange.value;
 }
 
