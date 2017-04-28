@@ -92,6 +92,11 @@
         <option value="2DviewSelect">2D</option>
         <option value="3DviewSelect">3D</option>
         </select>
+            LEDs: <select id="LEDSelect">
+            <option value="APSelect">AP</option>
+            <option value="TrimSelect">Trim</option>
+            <option value="HeightSelect">Height</option>
+        </select>
     		<fieldset>
       Elevator Rake Angle
       <input id = "elevatorRakeRange"
@@ -122,10 +127,10 @@
 				type = "range"
 				min = "0.0"
 				max = "1"
-				value = "0.2"
+				value = "0.3"
 				step = "0.05" />
 			<output id = "foilRakeStep">0.2</output>°
-            Auto? <input type="checkbox" id="autoRakeStepCheck" checked =false>
+            Auto? <input type="checkbox" id="autoRakeStepCheck">
 		</fieldset>
 	    <fieldset>
       Target height

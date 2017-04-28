@@ -457,7 +457,22 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
     localStore()
 }
 function updateLED() {
-    var mu = (APRake-foilRake)/foilRakeStep/10;
+    var mu;
+    var mySelect = document.getElementById("LEDSelect");
+    switch (mySelect.value){
+        case "HeightSelect":
+            mu = (xyz_output_grnd_NED.z - pitch*7)/2
+            break
+        case "TrimSelect":
+            mu = -pitch*180/Math.PI/5
+            break;
+        case "APSelect":
+            mu = (APRake-getRakeDelayed(foilRakeDelay))/foilRakeStep/10;
+            break
+        default:
+            return
+    }
+        
     //mu = 0
     mu = Math.max(-1, Math.min(mu, 1))
     var sigma = 0.01;
@@ -478,6 +493,45 @@ function updateLED() {
     }
     strip.send();
 }
+
+function updateLED2() {
+    var mu;
+    var mySelect = document.getElementById("LEDSelect");
+    switch (mySelect.value){
+        case "HeightSelect":
+            mu = (xyz_output_grnd_NED.z + pitch*7)/2
+            break
+        case "TrimSelect":
+            mu = -pitch*180/Math.PI/5
+            break;
+        case "APSelect":
+            mu = (APRake-getRakeDelayed(foilRakeDelay))/foilRakeStep/10;
+            break
+        default:
+            return
+    }
+        
+    //mu = 0
+    //mu = 0
+    mu = Math.max(-1, Math.min(mu, 1))
+    var sigma = 0.01;
+    for (var i=0;i<light_count;i++) {
+        var x = i/(light_count-1)*2 -1
+        if ((mu==1) || (mu==-1)) {
+            if (Math.abs(mu-x)<0.1) {
+                strip2.buffer[i] = [255, 0, 0]
+            }
+            else {
+                strip2.buffer[i] = [0, 0, 0]
+            }
+            
+        }
+        else {    
+                strip2.buffer[i] = [0, Math.floor(255*Math.exp(-Math.pow(x-mu, 2)/(2*sigma))), 0]
+        }
+    }
+    strip2.send();
+}
 function updatePlot() {
     plot(xyz_body_grnd_NED, xyz_foil_body_FSD, xyz_elev_body_FSD,
         foilRake, elevatorRakeTotal, pitch);
@@ -488,7 +542,8 @@ function updaten() {
     // Dirty manual tuning to get close of real time on my computer
         update();
     }
-    updateLED()
+    updateLED();
+    updateLED2();
 }
 function computeForcesOnLiftingSurface(CTM, pitch, uvw_fluid_grnd_NED,
     uvw_surf_grnd_NED, xyz_surf_grnd_NED, xyz_surf_body_FSD, AoK, density, chord, z_waterSurface,
