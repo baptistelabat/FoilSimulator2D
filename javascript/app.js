@@ -1,4 +1,14 @@
 "use strict"
+var clientX = 0;
+var clientY = 0;
+var ApRakeOld = 0;
+var APRakeNFU = 0;
+var integralTerm = 0;
+document.addEventListener("mousemove", function(event) {
+  // Save the last known mouse position
+    clientX = event.clientX;
+    clientY = event.clientY + document.body.scrollTop;
+ })
 console.log("This is a foil simulator");
 var g_CLs = [],
     g_CDs = [],
@@ -8,7 +18,7 @@ var g_CLs = [],
 var strip, strip2; // need to be global
 var container = document.getElementById("ledstrip");
 var container2 = document.getElementById("ledstrip2");
-var light_count = 35;
+var light_count = 17;
 strip = LEDstrip(container, light_count);
 strip2 = LEDstrip(container2, light_count);
     
@@ -122,7 +132,8 @@ var uvw_fluid_grnd_NED  = new THREE.Vector3( 0, 0, 0 ),
     xyz_foil_grnd_FSD   = new THREE.Vector3( 0, 0, 0 ),
     uvw_elev_grnd_NED   = new THREE.Vector3( 0, 0, 0 ),
     xyz_output_ref_FSD  = new THREE.Vector3( 0, 0, 0 ),
-    xyz_output_grnd_NED = new THREE.Vector3( 0, 0, 0 );
+    xyz_output_grnd_NED = new THREE.Vector3( 0, 0, 0 ),
+	uvw_output_grnd_NED = new THREE.Vector3( 0, 0, 0 );
 
 // Hull extremity for archimedian thrust
 var xyz_hAB_ref_FSD = new THREE.Vector3( 0, 0, 0),   // Hull Aft Bottom
@@ -467,7 +478,14 @@ function updateLED() {
             mu = -pitch*180/Math.PI/5
             break;
         case "APSelect":
-            mu = (APRake-getRakeDelayed(foilRakeDelay))/foilRakeStep/10;
+            mu = -(APRake-getRakeDelayed(foilRakeDelay))/3*180/Math.PI/3;
+			
+			// incremental control
+			mu = -APRakeNFU/(3*Math.PI/180);
+			
+			// absolute control
+			mu= -(APRake -3*Math.PI/180)/(2*Math.PI/180)
+			
             break
         default:
             return
@@ -497,12 +515,12 @@ function updateLED() {
 function updateLED2() {
     var mu;
     var mySelect = document.getElementById("LEDSelect");
-    switch (mySelect.value){
+    switch ("TrimSelect"){
         case "HeightSelect":
             mu = (xyz_output_grnd_NED.z + pitch*7)/2
             break
         case "TrimSelect":
-            mu = -pitch*180/Math.PI/5
+            mu = pitch*180/Math.PI/5
             break;
         case "APSelect":
             mu = (APRake-getRakeDelayed(foilRakeDelay))/foilRakeStep/10;
@@ -544,6 +562,8 @@ function updaten() {
     }
     updateLED();
     updateLED2();
+	//foilRake = foilRake - (clientY-242)/106*sampleTime*8*Math.PI/180*3;
+	//foilRake = -(clientY-242)/106*Math.PI/180*2+3*Math.PI/180;
 }
 function computeForcesOnLiftingSurface(CTM, pitch, uvw_fluid_grnd_NED,
     uvw_surf_grnd_NED, xyz_surf_grnd_NED, xyz_surf_body_FSD, AoK, density, chord, z_waterSurface,
@@ -716,6 +736,8 @@ function computeForces() {
     
         xyz_output_grnd_NED = (xyz_output_ref_FSD.clone().sub(xyz_body_ref_FSD)).
     	applyMatrix4(invCTM).add(xyz_body_grnd_NED);
+		tmp    = new THREE.Vector3( 0, 0, 0 ),
+		uvw_output_grnd_NED = uvw_body_grnd_NED.clone().add(tmp.crossVectors(pqr_body_grnd_FSD, xyz_output_ref_FSD));
     
 }
 
@@ -723,8 +745,11 @@ function computeFF() {
     return 3*Math.PI/180
 }
 function computeAP() {
-    APtarget = computeFF() + (xyz_output_grnd_NED.z-targetHeight)*(2)*Math.PI/180 + (pitch - 0)*(-0.5) -0.5*pqr_body_grnd_FSD.y
+    APtarget = computeFF() + (xyz_output_grnd_NED.z-targetHeight)*(4)*Math.PI/180 + (pitch - 0)*(-0.5) -0.5*pqr_body_grnd_FSD.y
     return APtarget;
+}
+function computeAP_NFU() {
+			return 2*(uvw_output_grnd_NED.z)*Math.PI/180 - 0.5*pqr_body_grnd_FSD.y + (xyz_output_grnd_NED.z-targetHeight)*(2)*Math.PI/180/2;
 }
 function update() {
     computeForces();
@@ -736,16 +761,18 @@ function update() {
     keyExpCount = keyExpCount*Math.exp(-dt/5);
     //keyMovingAverageCount = 
     if (document.getElementById("autoRakeStepCheck").checked) {
-        stepGain = Math.min(0.7511*Math.exp(0.0604*movingAverage), 2.5);
-        //stepGain = Math.min(0.7511*Math.exp(0.0604*keyExpCount), 2.5);
+        stepGain = Math.min(0.7511*Math.exp(0.1*movingAverage), 2.5);
+        //stepGain = Math.min(0.7511*Math.exp(0.1*keyExpCount), 2.5);
     }
     else {
         stepGain = 1;
     }
     
     APRake = computeAP();
+	APRakeNFU = computeAP_NFU();
     if (APEngage) {
         foilRake = APRake;
+		//foilRake = foilRake + APRakeNFU*sampleTime;
     }      
     
         
@@ -1280,7 +1307,7 @@ function updateOutput() {
     foil.innerHTML = (foilRake*180/Math.PI).toFixed(1) + "°";
     foil.style.fontSize= "40px"
     foil.style.color="red";
-    elev.innerHTML = (elevatorRakeTotal*180/Math.PI).toFixed(1) + "°";
+    elev.innerHTML = (APRake*180/Math.PI).toFixed(1) + "°";
     elev.style.fontSize= "40px"
     elev.style.color="red";
     stepGainDisp.innerHTML = stepGain;
