@@ -37,6 +37,9 @@
                         <path id="Fweight" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/>
                         <path id="Fall" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="red"/>
                       </g>
+					  <g id="prop_frame" transform="translate(0,-0)">
+                        <path id="Fprop" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/>
+                      </g>
                       <g id="B_frame" transform="translate(0,-0)">
                         <path id="Fbuoyancy" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/>
                       </g>
@@ -103,15 +106,15 @@
 				type = "range"
 				min = "-3"
 				max = "3"
-				value = "-2.5"
-				step = "0.1" />
+				value = "0.74"
+				step = "0.01" />
 			<output id = "elevatorRake">0</output>°
       Foil Rake Angle
 			<input id = "foilRakeRange"
 				type = "range"
 				min = "-3"
 				max = "9"
-				value = "3.8"
+				value = "3"
 				step = "0.25" />
 			<output id = "foilRake">1</output>°
 		Foil Rake Delay
@@ -127,7 +130,7 @@
 				type = "range"
 				min = "0.0"
 				max = "1"
-				value = "0.3"
+				value = "0.1"
 				step = "0.05" />
 			<output id = "foilRakeStep">0.2</output>°
             Auto? <input type="checkbox" id="autoRakeStepCheck">
@@ -174,9 +177,9 @@
 				type = "range"
 				min = "-10"
 				max = "10"
-				value = "0.6"
+				value = "0"
 				step = "0.1" />
-			<output id = "pitch">2</output>°
+			<output id = "pitch">0</output>°
         Is dynamic? <input type="checkbox" id="pitchDynamicCheck" checked =false>
         Pitch rate
         	<input id = "pitchRateRange"
@@ -201,9 +204,9 @@
 				type = "range"
 				min = "-10"
 				max = "10"
-				value = "4"
+				value = "3.9"
 				step = "0.01" />
-			<output id = "heave">2</output>m
+			<output id = "heave">3.9</output>m
         Is dynamic? <input type="checkbox" id="heaveDynamicCheck" checked =false>
         	<input id = "heaveRateRange"
 				type = "range"
@@ -261,7 +264,7 @@
 				type = "range"
 				min = "0"
 				max = "15"
-				value = "5.9"
+				value = "6.1"
 				step = "0.1" />
 			<output id = "CGLongi">2</output>m
       Vertical coordinates
@@ -269,7 +272,7 @@
 				type = "range"
 				min = "-10"
 				max = "10"
-				value = "2.4"
+				value = "2.3"
 				step = "0.1" />
 			<output id = "CGVertUp">2</output>m
         Gravity? <input type="checkbox" id="gravityCheck" checked =true>
@@ -308,16 +311,16 @@
 				type = "range"
 				min = "1"
 				max = "20"
-				value = "10"
-				step = "0.1" />
+				value = "9.5"
+				step = "0.05" />
 			<output id = "elevatorAspectRatio">5</output>
       Foil aspect Ratio
       <input id = "foilAspectRatioRange"
 				type = "range"
 				min = "1"
 				max = "20"
-				value = "5"
-				step = "0.1" />
+				value = "3.75"
+				step = "0.05" />
 			<output id = "foilAspectRatio">5</output>
     </fieldset>
     <fieldset>
@@ -352,7 +355,7 @@
 				type = "range"
 				min = "0"
 				max = "15"
-				value = "7.68"
+				value = "7.7"
 				step = "0.01" />
 			<output id = "foilLongi">2</output>m
       </fieldset>
@@ -410,6 +413,16 @@
 				value = "-0.25"
 				step = "0.01" />
 			<output id = "bodyVertUp">2</output>m
+      </fieldset>
+	  <fieldset>
+      Propulsion point vertical coordinates
+			<input id = "propVertUpRange"
+				type = "range"
+				min = "-10"
+				max = "25"
+				value = "11"
+				step = "0.01" />
+			<output id = "propVertUp">11</output>m
       </fieldset>
 	  </div>
       <fieldset>

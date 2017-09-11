@@ -75,7 +75,7 @@ var meter2pix           = 50,
 // Initial condition
 var V                    = 10,
     q0                   = 0,    // Angular rate
-    pitch                = 2.2 * Math.PI / 180,
+    pitch                = 0 * Math.PI / 180,
     rakeMeanPower        = 0,
     flightSpeedVariation = 0;
 var    elevatorRakeFiltCorrection = 0;
@@ -118,7 +118,7 @@ var z_rotationAxis = 0;
 // Position coordinates are given relative to the hull reference point
 // which is aft, at MWP (waterline in equilibrium condition)
 var uvw_fluid_grnd_NED  = new THREE.Vector3( 0, 0, 0 ),
-    xyz_body_grnd_NED   = new THREE.Vector3( 0, 0, -1.2 ),
+    xyz_body_grnd_NED   = new THREE.Vector3( 0, 0, -1.6 ),
     xyz_body_ref_FSD    = new THREE.Vector3( 0, 0, 0 ),
     uvw_body_grnd_NED   = new THREE.Vector3( V, 0, 0 ),
     xyz_CoG_ref_FSD     = new THREE.Vector3( 0, 0, 0 ),
@@ -132,6 +132,8 @@ var uvw_fluid_grnd_NED  = new THREE.Vector3( 0, 0, 0 ),
     xyz_foil_grnd_FSD   = new THREE.Vector3( 0, 0, 0 ),
     uvw_elev_grnd_NED   = new THREE.Vector3( 0, 0, 0 ),
     xyz_output_ref_FSD  = new THREE.Vector3( 0, 0, 0 ),
+	xyz_prop_ref_FSD  = new THREE.Vector3( 0, 0, 0 ),
+	xyz_prop_body_FSD  = new THREE.Vector3( 0, 0, 0 ),
     xyz_output_grnd_NED = new THREE.Vector3( 0, 0, 0 ),
 	uvw_output_grnd_NED = new THREE.Vector3( 0, 0, 0 );
 
@@ -154,11 +156,13 @@ var XYZ_foil_body_NED     = new THREE.Vector3( 0, 0, 0 ),
     XYZ_elev_body_NED     = new THREE.Vector3( 0, 0, 0 ),
     XYZ_wght_body_NED     = new THREE.Vector3( 0, 0, 0 ),
     XYZ_buoyancy_body_NED = new THREE.Vector3( 0, 0, 0 ),
+	XYZ_prop_body_NED = new THREE.Vector3( 0, 0, 0 ),
     XYZ_all_body_NED      = new THREE.Vector3( 0, 0, 0 ),
     XYZ_foil_body_FSD     = new THREE.Vector3( 0, 0, 0 ),
     XYZ_elev_body_FSD     = new THREE.Vector3( 0, 0, 0 ),
     XYZ_wght_body_FSD     = new THREE.Vector3( 0, 0, 0 ),
     XYZ_buoyancy_body_FSD = new THREE.Vector3( 0, 0, 0 ),
+	XYZ_prop_body_FSD	  = new THREE.Vector3( 0, 0, 0 ),
     XYZ_all_body_FSD      = new THREE.Vector3( 0, 0, 0 );
 
 // Torque vectors
@@ -166,6 +170,7 @@ var KMN_foil_body_FSD     = new THREE.Vector3( 0, 0, 0 ),
     KMN_elev_body_FSD     = new THREE.Vector3( 0, 0, 0 ),
     KMN_wght_body_FSD     = new THREE.Vector3( 0, 0, 0 ),
     KMN_buoyancy_body_FSD = new THREE.Vector3( 0, 0, 0 ),
+	KMN_prop_body_FSD  = new THREE.Vector3( 0, 0, 0 ),
     KMN_all_body_FSD      = new THREE.Vector3( 0, 0, 0 ),
     pqr_body_grnd_FSD     = new THREE.Vector3( 0, 0, 0 );
 
@@ -258,6 +263,8 @@ document.getElementById("outputLongiRange")           .
     addEventListener("change", updateOutputLongitudinalPosition);
 document.getElementById("outputVertUpRange")          .
     addEventListener("change", updateOutputVerticalUpPosition);
+document.getElementById("propVertUpRange")          .
+    addEventListener("change", updatePropulsionVerticalUpPosition);
 document.getElementById("fluidSelect")              .
     addEventListener("change", updateFluid);
 setInterval(updateMovingAverage, ma_ts*1000);
@@ -440,6 +447,7 @@ function init() {
     updateBodyVerticalUpPosition();
     updateOutputLongitudinalPosition();
     updateOutputVerticalUpPosition();
+	updatePropulsionVerticalUpPosition();
     updateFluid();
 }
 function plot(body_position, foil_position, elevator_position, foil_rake, elevator_rake) {
@@ -447,6 +455,7 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
     plotFoil();
     plotElevator();
     plotWeight();
+	plotPropulsion();
     plotBuoyancy();
     plotShip();
     plotFfoil();
@@ -459,6 +468,7 @@ function plot(body_position, foil_position, elevator_position, foil_rake, elevat
     translateFoil(xyz_foil_ref_FSD.x, xyz_foil_ref_FSD.z);
     translateElevator(xyz_elev_ref_FSD.x, xyz_elev_ref_FSD.z);
     translateCenterOfInertia(xyz_CoG_ref_FSD.x, xyz_CoG_ref_FSD.z);
+	translatePropulsion(xyz_CoG_ref_FSD.x, xyz_prop_ref_FSD.z);
     translateVirtual(x_virtual)
     translateRotationAxis(x_rotationAxis, z_rotationAxis);
     rotateFoil(foil_rake);
@@ -570,7 +580,7 @@ function computeForcesOnLiftingSurface(CTM, pitch, uvw_fluid_grnd_NED,
     isSurfaceEffect, isSurface, isSurfStall, surfArea, surfAspectRatio) {
         
     var angle_uvw_surf_fluid_NED, q, AoA, chord, lift, drag,
-        inverseMirrorEffect=1,
+        invMirrorEffect=1,
         dragSurfaceEffect=1,
         stallEffect=1;
     var tmp    = new THREE.Vector3( 0, 0, 0 ),
@@ -599,23 +609,19 @@ function computeForcesOnLiftingSurface(CTM, pitch, uvw_fluid_grnd_NED,
     if (xyz_surf_grnd_NED.z>z_waterSurface) { // z is positive down
         // formula according to Hydrodynamics of High Speed 
         // Marine Vehicles equation 6.144 on page 200
-        inverseMirrorEffect = 
-            (1 + 16 * Math.pow(
-                Math.min(0, z_waterSurface - xyz_surf_grnd_NED.z) / chord, 2))
-            /
-            (2 + 16 * Math.pow(
-            Math.min(0, z_waterSurface - xyz_surf_grnd_NED.z) / chord, 2));
+		var depthOverChord = (z_waterSurface - xyz_surf_grnd_NED.z) / chord;
+        invMirrorEffect = inverseMirrorEffect(depthOverChord);
         if (!isSurfaceEffect) {
-            inverseMirrorEffect = 1;
+            invMirrorEffect = 1;
         }
         dragSurfaceEffect = 1;
     }
     else {
-        inverseMirrorEffect = 0;
+        invMirrorEffect = 0;
         dragSurfaceEffect   = 0;
     }
     if (!isSurface) {
-        inverseMirrorEffect = 1;
+        invMirrorEffect = 1;
         dragSurfaceEffect   = 1;
     }
     
@@ -636,7 +642,7 @@ function computeForcesOnLiftingSurface(CTM, pitch, uvw_fluid_grnd_NED,
     // Compute lift and drag
     lift   = q * surfArea*liftCoefficient(
         AoA, surfAspectRatio, g_CLs, g_alphas_deg)*
-            inverseMirrorEffect*stallEffect;
+            invMirrorEffect*stallEffect;
     drag   = q * surfArea*dragCoefficient(
         AoA, surfAspectRatio, g_CDs, g_alphas_deg)*
             dragSurfaceEffect;
@@ -723,14 +729,19 @@ function computeForces() {
     XYZ_elev_body_NED = res[2].clone();
     KMN_elev_body_NED = res[3].clone();
     isElevStall = res[4];
+	
+	XYZ_prop_body_NED.x = -(XYZ_elev_body_NED.x + XYZ_foil_body_NED.x);
+	XYZ_prop_body_FSD = XYZ_prop_body_NED.clone().applyMatrix4(CTM);
+	xyz_prop_body_FSD = xyz_prop_ref_FSD.clone().sub(xyz_body_ref_FSD);
+	KMN_prop_body_FSD = tmp.clone().crossVectors(xyz_prop_body_FSD, XYZ_prop_body_FSD);
     
     XYZ_all_body_NED = XYZ_elev_body_NED.clone().
         add(XYZ_foil_body_NED).add(XYZ_wght_body_NED).
-            add(XYZ_buoyancy_body_NED);
+            add(XYZ_buoyancy_body_NED).add(XYZ_prop_body_NED);
     XYZ_all_body_FSD = XYZ_all_body_NED.clone().applyMatrix4(CTM)
     KMN_all_body_FSD = KMN_elev_body_FSD.clone().
         add(KMN_foil_body_FSD).add(KMN_wght_body_FSD).
-        add(KMN_buoyancy_body_FSD);
+        add(KMN_buoyancy_body_FSD).add(KMN_prop_body_FSD);
     //console.log(XYZ_wght_body_FSD);
     //console.log(KMN_wght_body_FSD);
     
@@ -838,6 +849,10 @@ function translateCenterOfInertia(x, z) {
     var elevator_frame = document.getElementById("CoG_frame");
     elevator_frame.setAttribute('transform', 'translate(' + (x * meter2pix) + ',' + (z * meter2pix) + ')');
 }
+function translatePropulsion(x, z) {
+    var prop_frame = document.getElementById("prop_frame");
+    prop_frame.setAttribute('transform', 'translate(' + (x * meter2pix) + ',' + (z * meter2pix) + ')');
+}
 function translateBuoyancy(x, z) {
     var B_frame = document.getElementById("B_frame");
     B_frame.setAttribute('transform', 'translate(' + (x * meter2pix) + ',' + (z * meter2pix) + ')');
@@ -887,6 +902,10 @@ function plotTargetHeight() {
 function plotWeight() {
     var arrow = document.getElementById("Fweight");
     arrow.setAttribute('d', "M" + 0 * meter2pix + " " + 0 * meter2pix+ " L"+ XYZ_wght_body_FSD.x * Newton2meter*meter2pix +" "+ XYZ_wght_body_FSD.z*Newton2meter*meter2pix);
+}
+function plotPropulsion() {
+    var arrow = document.getElementById("Fprop");
+    arrow.setAttribute('d', "M" + 0 * meter2pix + " " + 0 * meter2pix+ " L"+ XYZ_prop_body_FSD.x * Newton2meter*meter2pix +" "+ XYZ_prop_body_FSD.z*Newton2meter*meter2pix);
 }
 function plotBuoyancy() {
     var arrow = document.getElementById("Fbuoyancy");
@@ -1299,6 +1318,12 @@ function updateOutputVerticalUpPosition() {
     myOutput.value = myRange.value;
     xyz_output_ref_FSD.z = -myRange.value*1.0;
 }
+function updatePropulsionVerticalUpPosition() {
+    var myRange = document.getElementById("propVertUpRange");
+    var myOutput = document.getElementById("propVertUp");
+    myOutput.value = myRange.value;
+    xyz_prop_ref_FSD.z = -myRange.value*1.0;
+}
     
 function updateOutput() {
     var foil = document.getElementById("foilRakeDisplay");
@@ -1457,15 +1482,16 @@ function liftCoefficient(alpha, AR, CLs, alphas_deg) {
     // AR= span^2/kite_surface;
     // alphai= Cl/(Math.PI*e*AR);
     // dCL = dCl*AR/(AR+2.5)
-    dCL = dCl / (1 + dCl / (Math.PI * e * AR));
+    dCL = dCl / (1 + Math.abs(dCl) / (Math.PI * e * AR));
     Cl = dCL /2. * Math.sin (2 * alpha);
+	//Cl = 2*Math.PI*alpha;
     if (CLs.length>0) {
         Cl = everpolate.linear(alpha * 180 / Math.PI, alphas_deg, CLs);
     }
     return Cl;
  }
 function dragCoefficient(alpha, AR, CDs, alphas_deg) {
-    var Cd0 = 0.1,
+    var Cd0 = 0.02,
         e = 1,
         Cd,
         inducedDragCoefficient;
@@ -1476,7 +1502,17 @@ function dragCoefficient(alpha, AR, CDs, alphas_deg) {
     if (CDs.length>0) {
         Cd = everpolate.linear(alpha * 180 / Math.PI, alphas_deg, CDs);
     }
+	//Cd = 0.02;
     return Cd;
+}
+function inverseMirrorEffect(depthOverChord) {
+        // formula according to Hydrodynamics of High Speed 
+        // Marine Vehicles equation 6.144 on page 200
+        return (1 + 16 * Math.pow(
+                Math.min(0, depthOverChord), 2))
+            /
+            (2 + 16 * Math.pow(
+            Math.min(0, depthOverChord), 2));
 }
 function simple_moving_averager(period) {
     var nums = [];
@@ -1492,4 +1528,12 @@ function simple_moving_averager(period) {
             n = nums.length;
         return(sum/n);
     }
+}
+
+function getQueryParam(param) {
+    var result =  window.location.search.match(
+        new RegExp("(\\?|&)" + param + "(\\[\\])?=([^&]*)")
+    );
+
+    return result ? result[3] : false;
 }
