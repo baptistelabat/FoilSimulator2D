@@ -1332,7 +1332,7 @@ function updateOutput() {
     foil.innerHTML = (foilRake*180/Math.PI).toFixed(1) + "°";
     foil.style.fontSize= "40px"
     foil.style.color="red";
-    elev.innerHTML = (APRake*180/Math.PI).toFixed(1) + "°";
+    elev.innerHTML = (elevatorRake*180/Math.PI).toFixed(1) + "°";
     elev.style.fontSize= "40px"
     elev.style.color="red";
     stepGainDisp.innerHTML = stepGain;

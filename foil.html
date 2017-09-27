@@ -52,10 +52,10 @@
                       <path id="Ffoil" marker-end="url(#triangle)" d="m 0 0 L-200 -100" fill="transparent" stroke="black"/> 
                     </g>
                     <g id="virtual_frame" transform="translate(0,-0)">
-                         <circle id="virtualPoint" cx="00" cy="12.5" r="5" stroke="black" stroke-width="1" fill="red" />
+                         <circle id="virtualPoint" cx="00" cy="12.5" r="5" stroke="black" stroke-width="1" fill="red" visibility="hidden"/>
                     </g>
                     <g id="inertialRotationAxis_frame" transform="translate(0,-0)">
-                         <circle id="rotationAxis" cx="00" cy="12.5" r="5" stroke="black" stroke-width="1" fill="red" />
+                         <circle id="rotationAxis" cx="00" cy="12.5" r="5" stroke="black" stroke-width="1" fill="red" visibility="hidden"/>
                     </g>
                   </g>
                   </g>
@@ -145,32 +145,6 @@
 				step = "0.1" />
 			<output id = "targetHeight">1</output>m
            </fieldset>
-          <fieldset>
-      Virtual point longitudinal position
-			<input id = "virtualForceLongiRange"
-				type = "range"
-				min = "0.5"
-				max = "45"
-				value = "15"
-				step = "0.1" />
-			<output id = "virtualForceLongi">1</output>m
-        Allowed elevator rake for control
-			<input id = "allowedElevatorRakeForControlRange"
-				type = "range"
-				min = "0"
-				max = "1.5"
-				value = "0.5"
-				step = "0.1" />
-			<output id = "allowedElevatorRakeForControl">1</output>°
-      Time constant
-			<input id = "allowedElevatorRakeForControlTimeConstantRange"
-				type = "range"
-				min = "0.5"
-				max = "15"
-				value = "5"
-				step = "0.1" />
-			<output id = "allowedElevatorRakeForControlTimeConstant">1</output>s
-		</fieldset>
           <fieldset>
       Pitch
 			<input id = "pitchRange"
@@ -277,6 +251,16 @@
 			<output id = "CGVertUp">2</output>m
         Gravity? <input type="checkbox" id="gravityCheck" checked =true>
      </fieldset>
+	 	  <fieldset>
+      Propulsion point vertical coordinates
+			<input id = "propVertUpRange"
+				type = "range"
+				min = "-10"
+				max = "25"
+				value = "11"
+				step = "0.01" />
+			<output id = "propVertUp">11</output>m
+      </fieldset>
      <fieldset>
       Pitch inertia
 			<input id = "pitchInertiaRange"
@@ -414,16 +398,6 @@
 				step = "0.01" />
 			<output id = "bodyVertUp">2</output>m
       </fieldset>
-	  <fieldset>
-      Propulsion point vertical coordinates
-			<input id = "propVertUpRange"
-				type = "range"
-				min = "-10"
-				max = "25"
-				value = "11"
-				step = "0.01" />
-			<output id = "propVertUp">11</output>m
-      </fieldset>
 	  </div>
       <fieldset>
       <select id="fluidSelect">
@@ -431,6 +405,32 @@
         <option value="Air">Air</option>
       </select>
     </fieldset>
+	          <fieldset>
+      Virtual point longitudinal position
+			<input id = "virtualForceLongiRange"
+				type = "range"
+				min = "0.5"
+				max = "45"
+				value = "15"
+				step = "0.1" />
+			<output id = "virtualForceLongi">1</output>m
+        Allowed elevator rake for control
+			<input id = "allowedElevatorRakeForControlRange"
+				type = "range"
+				min = "0"
+				max = "1.5"
+				value = "0.5"
+				step = "0.1" />
+			<output id = "allowedElevatorRakeForControl">1</output>°
+      Time constant
+			<input id = "allowedElevatorRakeForControlTimeConstantRange"
+				type = "range"
+				min = "0.5"
+				max = "15"
+				value = "5"
+				step = "0.1" />
+			<output id = "allowedElevatorRakeForControlTimeConstant">1</output>s
+		</fieldset>
 	</form>
     <form class="form-horizontal well">
       <legend>
